@@ -41,7 +41,7 @@ def summarize_noise(avg_time_drlqc_0_0001, std_time_drlqc_0_0001,avg_time_drlqc_
     plt.fill_between(t[:6], drlqc_0_01_avgT + 0.5*drlqc_0_01_stdT, drlqc_0_01_avgT - 0.5*drlqc_0_01_stdT, facecolor='silver', alpha=0.3)
 
     
-    plt.plot(t, drce_avgT,  color='tab:green', label='WDR-CE')
+    plt.plot(t, drce_avgT,  color='tab:green', label='WDR-CE [Ours]')
     plt.fill_between(t, drce_avgT + 0.5*drce_stdT, drce_avgT - 0.5*drce_stdT, facecolor='tab:green', alpha=0.3)
     
     plt.xscale('log')

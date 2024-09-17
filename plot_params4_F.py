@@ -71,7 +71,7 @@ def summarize_lambda(wdrc_drkf_lambda_values, wdrc_drkf_theta_v_values, wdrc_drk
     # Plot smooth surface - DCE
     surface_wdrc_drkf = ax.plot_surface(lambda_grid_wdrc_drkf, theta_v_grid_wdrc_drkf, cost_grid_wdrc_drkf, alpha=0.4, color='red', label='WDRC+DRKF')
     surfaces.append(surface_wdrc_drkf)
-    labels.append('WDRC + DRKF [61]')
+    labels.append('WDRC + WKF [61]')
     
     
     #---------------------------
