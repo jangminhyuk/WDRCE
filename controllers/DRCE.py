@@ -6,6 +6,7 @@ import time
 from scipy.optimize import minimize
 import cvxpy as cp
 import scipy
+from joblib import Parallel, delayed
 
 # Wasserstein Distributionally Robust Control and Estimation (WDR-CE)
 class DRCE:
@@ -82,13 +83,35 @@ class DRCE:
         # Find inf_penalty (infimum value of penalty coefficient satisfying Assumption)
         self.infimum_penalty = self.binarysearch_infimum_penalty_finite()
         print("Infimum penalty:", self.infimum_penalty)
-        print("Optimizing lambda . . . Please wait for a while")
-        output = minimize(self.objective, x0=np.array([4*self.infimum_penalty]), method='L-BFGS-B', options={'eps': 1e-4 , 'disp': False, 'maxiter': 1000})
         
+        # REMOVE BELOW
+        #return np.array([790])
+        ##
+        
+        print("Optimizing lambda . . . Please wait")
+        #output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='L-BFGS-B', options={'disp': True, 'maxiter': 100,'ftol': 1e-3,'gtol': 1e-3, 'maxfun':100})
+        #output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='L-BFGS-B', options={'disp': True, 'maxfun': 500})
+        output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='Nelder-Mead', options={'disp': True, 'maxiter': 15, 'fatol': 1e-3})
+        # output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='Nelder-Mead', options={'disp': False})
         optimal_penalty = output.x
         print("DRCE Optimal penalty (lambda_star):", optimal_penalty[0], "theta_w : ", self.theta_w, " theta_v : ", self.theta_v)
-        #print(optimal_penalty)
         return optimal_penalty
+    
+    
+        # #output = minimize(self.objective, x0=np.array([10*self.infimum_penalty]), method='Nelder-Mead', options={'disp': False, 'maxiter': 200})
+        # # penalty_values = np.linspace(120* self.infimum_penalty, 200 * self.infimum_penalty, num=5)
+        
+        
+        # penalty_values = np.linspace(1000, 1300, num=1)
+        # objectives = Parallel(n_jobs=-1)(delayed(self.objective)(np.array([p])) for p in penalty_values)
+        # objectives = np.array(objectives)
+        # optimal_penalty = penalty_values[np.argmin(objectives)]
+        # #optimal_penalty = output.x
+        # print("DRCE Optimal penalty (lambda_star):", optimal_penalty, "theta_w : ", self.theta_w, " theta_v : ", self.theta_v)
+        # #print("DRCE Optimal penalty (lambda_star):", optimal_penalty[0], "theta_w : ", self.theta_w, " theta_v : ", self.theta_v)
+        # #print(optimal_penalty)
+        # return np.array([optimal_penalty])
+        # #return optimal_penalty
 
     def objective(self, penalty):
         
@@ -121,14 +144,15 @@ class DRCE:
         S_yy = np.zeros((self.T+1, self.ny, self.ny))
         sigma_wc = np.zeros((self.T, self.nx, self.nx))
           
-        x_cov[0], S_xx[0], S_xy[0], S_yy[0], _= self.DR_kalman_filter_cov_initial(self.M_hat[0], self.x0_cov_hat)
+        x_cov[0], S_xx[0], S_xy[0], S_yy[0], _= self.DR_kalman_filter_cov_initial(self.M_hat[0], self.x0_cov_hat, S[0])
         for t in range(0, self.T-1):
             x_cov[t+1], S_xx[t+1], S_xy[t+1], S_yy[t+1], sigma_wc[t], z_tilde[t] = self.DR_kalman_filter_cov(P[t+1], S[t+1], self.M_hat[t+1], x_cov[t], self.Sigma_hat[t], penalty)
 
         y = self.get_obs(self.x0_init, self.true_v_init)
         x0_mean = self.DR_kalman_filter(self.v_mean_hat[0], self.M_hat[0], self.x0_mean_hat, y, S_xx[0], S_xy[0], S_yy[0]) #initial state estimation
-        obj_val = penalty*self.T*self.theta_w**2 + (self.x0_mean_hat.T @ P[0] @ self.x0_mean_hat)[0][0] + 2*(r[0].T @ self.x0_mean_hat)[0][0] + z[0][0] + np.trace(P[0] @ S_xx[0]) + np.trace(S[0] @ x_cov[0]) + z_tilde.sum()
-
+        obj_val = penalty*self.T*self.theta_w**2 + (self.x0_mean_hat.T @ P[0] @ self.x0_mean_hat)[0][0] + 2*(r[0].T @ self.x0_mean_hat)[0][0] + z[0][0] + np.trace((P[0]+S[0]) @self.x0_cov_hat) + z_tilde.sum()
+        #obj_val = penalty*self.T*self.theta_w**2 + (self.x0_mean_hat.T @ P[0] @ self.x0_mean_hat)[0][0] + 2*(r[0].T @ self.x0_mean_hat)[0][0] + z[0][0] + np.trace(P[0] @ S_xx[0]) + np.trace(S[0] @ x_cov[0]) + z_tilde.sum()
+        print(f'obj for {penalty}: {obj_val}')
         return obj_val/self.T       
         
     def binarysearch_infimum_penalty_finite(self):
@@ -255,6 +279,7 @@ class DRCE:
         prob.solve(solver=cp.MOSEK)
         if prob.status in ["infeasible", "unbounded"]:
             print("theta_w : ", self.theta_w, " theta_v : ", self.theta_v)
+            print("Lambda_:" , Lambda_)
             print(prob.status, 'False in DRCE SDP !!!!!!!!')
         
         sol = prob.variables()
@@ -275,8 +300,8 @@ class DRCE:
         X0 = cp.Variable((self.nx, self.nx), symmetric=True, name='X0') # prediction
         X = cp.Variable((self.nx, self.nx), symmetric=True, name='X')
         M0 = cp.Variable((self.ny, self.ny), symmetric=True, name='M0')
-        Z = cp.Variable((self.ny, self.ny), name='Z')
-        Y = cp.Variable((self.nx, self.nx), name='Y')
+        Z = cp.Variable((self.ny, self.ny), name='Z', PSD=True)
+        Y = cp.Variable((self.nx, self.nx), name='Y', PSD=True)
         
         #Parameters
         S_var = cp.Parameter((self.nx,self.nx), name='S_var')
@@ -312,10 +337,10 @@ class DRCE:
     
 
     
-    def solve_DR_sdp_initial(self, prob, M_hat, X_hat):
+    def solve_DR_sdp_initial(self, prob, M_hat, X_hat, S_0):
         params = prob.parameters()
         #print(params)
-        params[0].value = self.S[0]
+        params[0].value = S_0
         params[1].value = M_hat
         params[2].value = self.theta_v
         params[3].value = X_hat
@@ -358,9 +383,9 @@ class DRCE:
         
         return X_cov_new, S_xx, S_xy, S_yy, Sigma_wc, cost
     
-    def DR_kalman_filter_cov_initial(self, M_hat, X_cov): #DRKF !!
+    def DR_kalman_filter_cov_initial(self, M_hat, X_cov, S_0): #DRKF !!
         #Performs state estimation based on the current state estimate, control input and new observation
-        S_xx, S_xy, S_yy, cost = self.solve_DR_sdp_initial(self.DR_sdp_init, M_hat, X_cov)
+        S_xx, S_xy, S_yy, cost = self.solve_DR_sdp_initial(self.DR_sdp_init, M_hat, X_cov, S_0)
         
         X_cov_new = S_xx - S_xy @ np.linalg.inv(S_yy) @ S_xy.T
         return X_cov_new, S_xx, S_xy, S_yy, cost
@@ -410,7 +435,7 @@ class DRCE:
         self.S_xy = np.zeros((self.T+1, self.nx, self.ny))
         self.S_yy = np.zeros((self.T+1, self.ny, self.ny))
         self.sigma_wc = np.zeros((self.T, self.nx, self.nx))
-        self.x_cov[0], self.S_xx[0], self.S_xy[0], self.S_yy[0], _= self.DR_kalman_filter_cov_initial(self.M_hat[0], self.x0_cov_hat)
+        self.x_cov[0], self.S_xx[0], self.S_xy[0], self.S_yy[0], _= self.DR_kalman_filter_cov_initial(self.M_hat[0], self.x0_cov_hat, self.S[0])
         
         for t in range(self.T):
             print("DRCE Offline step : ",t,"/",self.T)
