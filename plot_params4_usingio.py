@@ -76,7 +76,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     )
     
     # Plot smooth surface - DCE
-    surface_drlqc = ax.plot_surface(theta_w_grid_drlqc, theta_v_grid_drlqc, cost_grid_drlqc, alpha=0.6, color='gold', label='DRLQC', antialiased=False)
+    surface_drlqc = ax.plot_surface(theta_w_grid_drlqc, theta_v_grid_drlqc, cost_grid_drlqc, alpha=0.5, color='gold', label='DRLQC', antialiased=False)
     surfaces.append(surface_drlqc)
     labels.append('DRLQC [14]')
     
@@ -127,7 +127,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     a = ax.zaxis.label.get_rotation()
     ax.set_zlabel(r'Total Cost', fontsize=16, labelpad=3)
     plt.show()
-    fig.savefig(path + 'params_{}_{}_nonzeromean.pdf'.format(dist, noise_dist), dpi=300, bbox_inches="tight", pad_inches=0.3)
+    fig.savefig(path + 'params_{}_{}_use_io.pdf'.format(dist, noise_dist), dpi=300, bbox_inches="tight", pad_inches=0.3)
     #plt.clf()
 
 if __name__ == "__main__":
@@ -140,9 +140,11 @@ if __name__ == "__main__":
     
     
     if args.use_lambda:
-        path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/nonzero/".format(args.dist, args.noise_dist)
+        path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/io/".format(args.dist, args.noise_dist)
+        rawpath = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/io/raw/".format(args.dist, args.noise_dist)
     else:
-        path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/nonzero/".format(args.dist, args.noise_dist)
+        path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/io/".format(args.dist, args.noise_dist)
+        rawpath = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/io/raw/".format(args.dist, args.noise_dist)
 
     #Load data
     drlqc_theta_w_values =[]
@@ -165,16 +167,19 @@ if __name__ == "__main__":
     lqg_theta_v_values = []
     lqg_cost_values = []
     
+    drlqc_optimal_theta_w, drlqc_optimal_theta_v, drlqc_optimal_cost = 0, 0, 99999999
+    drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost = 0, 0, 99999999
+    wdrc_optimal_theta_w, wdrc_optimal_cost = 0, 99999999
     # TODO : Modify the theta_v_list and lambda_list below to match your experiments!!! 
     
     if args.dist=='normal':
         lambda_list = [12, 15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
-        theta_v_list = [0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
-        theta_w_list = [0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        theta_v_list = [ 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        theta_w_list = [ 0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
     else:
         lambda_list = [15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
-        theta_v_list = [0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
-        theta_w_list = [0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        theta_v_list = [1.0, 2.0, 3.0]
+        theta_w_list = [2.0, 3.0]
         
     # Regular expression pattern to extract numbers from file names
     

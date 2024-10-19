@@ -165,6 +165,9 @@ if __name__ == "__main__":
     lqg_theta_v_values = []
     lqg_cost_values = []
     
+    drlqc_optimal_theta_w, drlqc_optimal_theta_v, drlqc_optimal_cost = 0, 0, 99999999
+    drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost = 0, 0, 99999999
+    wdrc_optimal_theta_w, wdrc_optimal_cost = 0, 99999999
     # TODO : Modify the theta_v_list and lambda_list below to match your experiments!!! 
     
     if args.dist=='normal':
@@ -187,6 +190,8 @@ if __name__ == "__main__":
         pattern_drce = r"drce_(\d+(?:\.\d+)?)_?(\d+(?:_\d+)?)?and_(\d+(?:\.\d+)?)_?(\d+(?:_\d+)?)?"
         pattern_wdrc = r"wdrc_(\d+(?:\.\d+)?)_?(\d+(?:_\d+)?)?"
     pattern_lqg = r"lqg.pkl"
+    
+    print(path)
     # Iterate over each file in the directory
     for filename in os.listdir(path):
         match = re.search(pattern_drce, filename)
@@ -214,6 +219,10 @@ if __name__ == "__main__":
             
             drce_file = open(path + filename, 'rb')
             drce_cost = pickle.load(drce_file)
+            if drce_cost[0]<drce_optimal_cost:
+                drce_optimal_cost = drce_cost[0]
+                drce_optimal_theta_w = theta_w_value
+                drce_optimal_theta_v = theta_v_value
             drce_file.close()
             drce_cost_values.append(drce_cost[0])  # Store cost value
         else:
@@ -242,6 +251,10 @@ if __name__ == "__main__":
                 
                 drlqc_file = open(path + filename, 'rb')
                 drlqc_cost = pickle.load(drlqc_file)
+                if drlqc_cost[0]<drlqc_optimal_cost:
+                    drlqc_optimal_cost = drlqc_cost[0]
+                    drlqc_optimal_theta_w = theta_w_value
+                    drlqc_optimal_theta_v = theta_v_value
                 drlqc_file.close()
                 drlqc_cost_values.append(drlqc_cost[0])  # Store cost value
             else:
@@ -255,6 +268,10 @@ if __name__ == "__main__":
                         theta_w_value += float(theta_w_str)/10
                     wdrc_file = open(path + filename, 'rb')
                     wdrc_cost = pickle.load(wdrc_file)
+                    if wdrc_cost[0] < wdrc_optimal_cost:
+                        #print("WDRC!!!{} & {}".format(wdrc_cost[0], theta_w_value))
+                        wdrc_optimal_cost = wdrc_cost[0]
+                        wdrc_optimal_theta_w = theta_w_value
                     wdrc_file.close()
                     for aux_theta_v in theta_v_list:
                         if args.use_lambda:
@@ -268,6 +285,7 @@ if __name__ == "__main__":
                     if match_lqg:
                         lqg_file = open(path + filename, 'rb')
                         lqg_cost = pickle.load(lqg_file)
+                        
                         lqg_file.close()
                         if args.use_lambda:
                             for aux_lambda in lambda_list:
@@ -282,6 +300,24 @@ if __name__ == "__main__":
                                     lqg_theta_v_values.append(aux_theta_v)
                                     lqg_cost_values.append(lqg_cost[0])
                 
+                    
+    # We obtained the best-parameters for each method (within the examined region)
+    # DRLQC
+    print("Best parameters & Cost within the examined region")
+    print("-------------------------")
+    print("DRLQC")
+    print("Best theta_w: {}, Best theta_v: {}, Best cost: {}".format(drlqc_optimal_theta_w, drlqc_optimal_theta_v, drlqc_optimal_cost))
+    print("-------------------------")
+    print("DRCE")
+    print("Best theta_w: {}, Best theta_v: {}, Best cost: {}".format(drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost))
+    print("-------------------------")
+    print("WDRC")
+    print("Best theta_w: {},  Best cost: {}".format(wdrc_optimal_theta_w, wdrc_optimal_cost))
+    print("-------------------------")
+    print("LQG")
+    print("Cost: {}".format(lqg_cost[0]))               
+
+    exit()            
                     
 
     # Convert lists to numpy arrays

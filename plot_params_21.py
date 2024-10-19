@@ -59,7 +59,7 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     # Plot smooth surface - WDRC
     surface_wdrc =ax.plot_surface(lambda_grid_wdrc, theta_v_grid_wdrc, cost_grid_wdrc, alpha=0.6, color='blue', label='WDRC')
     surfaces.append(surface_wdrc)
-    labels.append('WDRC [30]')
+    labels.append('WDRC [12]')
     #--------------
     
 

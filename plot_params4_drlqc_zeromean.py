@@ -61,7 +61,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     # Plot smooth surface - WDRC
     surface_wdrc =ax.plot_surface(theta_w_grid_wdrc, theta_v_grid_wdrc, cost_grid_wdrc, alpha=0.6, color='blue', label='WDRC')
     surfaces.append(surface_wdrc)
-    labels.append('WDRC [30]')
+    labels.append('WDRC [12]')
     #--------------
 
     # Interpolate cost values for smooth surface - DRLQC
@@ -77,7 +77,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     # Plot smooth surface - DCE
     surface_drlqc = ax.plot_surface(theta_w_grid_drlqc, theta_v_grid_drlqc, cost_grid_drlqc, alpha=0.6, color='gold', label='DRLQC', antialiased=False)
     surfaces.append(surface_drlqc)
-    labels.append('DRLQC [29]')
+    labels.append('DRLQC [14]')
     
     #--------------
     # Interpolate cost values for smooth surface - DRCE
