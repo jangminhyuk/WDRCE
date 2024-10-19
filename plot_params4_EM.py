@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# This file generates Figure 2(a), (b)
+# This file generates Figure 1(a)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -47,6 +47,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     surfaces.append(surface_lqg)
     labels.append('LQG')
     #-------------------------
+    
     # Repeat the process for WDRC
     # Interpolate cost values for smooth surface - WDRC
     theta_w_grid_wdrc, theta_v_grid_wdrc = np.meshgrid(
@@ -64,7 +65,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     labels.append('WDRC [12]')
     #--------------
 
-    # Interpolate cost values for smooth surface - DRLQC
+    # Interpolate cost values for smooth surface - WDRLQC
     theta_w_grid_drlqc, theta_v_grid_drlqc = np.meshgrid(
         np.linspace(min(drlqc_theta_w_values), max(drlqc_theta_w_values), 100),
         np.linspace(min(drlqc_theta_v_values), max(drlqc_theta_v_values), 100)
@@ -75,12 +76,13 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     )
     
     # Plot smooth surface - DCE
-    surface_drlqc = ax.plot_surface(theta_w_grid_drlqc, theta_v_grid_drlqc, cost_grid_drlqc, alpha=0.6, color='gold', label='DRLQC', antialiased=False)
+    surface_drlqc = ax.plot_surface(theta_w_grid_drlqc, theta_v_grid_drlqc, cost_grid_drlqc, alpha=0.5, color='gold', label='DRLQC', antialiased=False)
     surfaces.append(surface_drlqc)
     labels.append('DRLQC [14]')
     
     #--------------
-    # Interpolate cost values for smooth surface - DRCE
+    
+    # Interpolate cost values for smooth surface - DRKF
     theta_w_grid_drce, theta_v_grid_drce = np.meshgrid(
         np.linspace(min(drce_theta_w_values), max(drce_theta_w_values), 100),
         np.linspace(min(drce_theta_v_values), max(drce_theta_v_values), 100)
@@ -95,6 +97,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     surfaces.append(surface_drce)
     labels.append('WDR-CE [Ours]')
     
+    #---------------
     #---------------
     legend = fig.legend(
     handles=surfaces,
@@ -124,7 +127,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     a = ax.zaxis.label.get_rotation()
     ax.set_zlabel(r'Total Cost', fontsize=16, labelpad=3)
     plt.show()
-    fig.savefig(path + 'params_{}_{}_zeromean.pdf'.format(dist, noise_dist), dpi=300, bbox_inches="tight", pad_inches=0.3)
+    fig.savefig(path + 'params_{}_{}_use_io.pdf'.format(dist, noise_dist), dpi=300, bbox_inches="tight", pad_inches=0.3)
     #plt.clf()
 
 if __name__ == "__main__":
@@ -132,14 +135,16 @@ if __name__ == "__main__":
     parser.add_argument('--dist', required=False, default="normal", type=str) #disurbance distribution (normal or uniform or quadratic)
     parser.add_argument('--noise_dist', required=False, default="normal", type=str) #noise distribution (normal or uniform or quadratic)
     parser.add_argument('--infinite', required=False, action="store_true") #infinite horizon settings if flagged
-    parser.add_argument('--use_lambda', required=False, action="store_true") #DEPRECATED !! (use lambda results if flagged)
+    parser.add_argument('--use_lambda', required=False, action="store_true") #use lambda results if flagged
     args = parser.parse_args()
     
     
     if args.use_lambda:
-        path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/zero/".format(args.dist, args.noise_dist)
+        path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/ioreal/".format(args.dist, args.noise_dist)
+        rawpath = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/ioreal/raw/".format(args.dist, args.noise_dist)
     else:
-        path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/zero/".format(args.dist, args.noise_dist)
+        path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/ioreal/".format(args.dist, args.noise_dist)
+        rawpath = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/ioreal/raw/".format(args.dist, args.noise_dist)
 
     #Load data
     drlqc_theta_w_values =[]
@@ -162,22 +167,23 @@ if __name__ == "__main__":
     lqg_theta_v_values = []
     lqg_cost_values = []
     
-    drlqc_optimal_theta_w, drlqc_optimal_theta_v, drlqc_optimal_cost = 0, 0, 99999999
-    drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost = 0, 0, 99999999
-    wdrc_optimal_theta_w, wdrc_optimal_cost = 0, 99999999
+    drlqc_optimal_theta_w, drlqc_optimal_theta_v, drlqc_optimal_cost = 0, 0, np.inf
+    drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost = 0, 0, np.inf
+    wdrc_optimal_theta_w, wdrc_optimal_cost = 0, np.inf
     # TODO : Modify the theta_v_list and lambda_list below to match your experiments!!! 
-    
-    theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
-    theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of disturbance ambiguity set
     
     if args.dist=='normal':
         lambda_list = [12, 15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
-        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
-        theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        theta_v_list = [ 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        theta_w_list = [ 0.1, 1.0, 2.0, 3.0, 4.0, 5.0]
+        theta_v_list = [ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
+        theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
     else:
         lambda_list = [15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
-        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
         theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        #theta_v_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
+        #theta_w_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
         
     # Regular expression pattern to extract numbers from file names
     
@@ -190,8 +196,6 @@ if __name__ == "__main__":
         pattern_drce = r"drce_(\d+(?:\.\d+)?)_?(\d+(?:_\d+)?)?and_(\d+(?:\.\d+)?)_?(\d+(?:_\d+)?)?"
         pattern_wdrc = r"wdrc_(\d+(?:\.\d+)?)_?(\d+(?:_\d+)?)?"
     pattern_lqg = r"lqg.pkl"
-    
-    print(path)
     # Iterate over each file in the directory
     for filename in os.listdir(path):
         match = re.search(pattern_drce, filename)
@@ -219,10 +223,6 @@ if __name__ == "__main__":
             
             drce_file = open(path + filename, 'rb')
             drce_cost = pickle.load(drce_file)
-            if drce_cost[0]<drce_optimal_cost:
-                drce_optimal_cost = drce_cost[0]
-                drce_optimal_theta_w = theta_w_value
-                drce_optimal_theta_v = theta_v_value
             drce_file.close()
             drce_cost_values.append(drce_cost[0])  # Store cost value
         else:
@@ -251,10 +251,6 @@ if __name__ == "__main__":
                 
                 drlqc_file = open(path + filename, 'rb')
                 drlqc_cost = pickle.load(drlqc_file)
-                if drlqc_cost[0]<drlqc_optimal_cost:
-                    drlqc_optimal_cost = drlqc_cost[0]
-                    drlqc_optimal_theta_w = theta_w_value
-                    drlqc_optimal_theta_v = theta_v_value
                 drlqc_file.close()
                 drlqc_cost_values.append(drlqc_cost[0])  # Store cost value
             else:
@@ -268,10 +264,6 @@ if __name__ == "__main__":
                         theta_w_value += float(theta_w_str)/10
                     wdrc_file = open(path + filename, 'rb')
                     wdrc_cost = pickle.load(wdrc_file)
-                    if wdrc_cost[0] < wdrc_optimal_cost:
-                        #print("WDRC!!!{} & {}".format(wdrc_cost[0], theta_w_value))
-                        wdrc_optimal_cost = wdrc_cost[0]
-                        wdrc_optimal_theta_w = theta_w_value
                     wdrc_file.close()
                     for aux_theta_v in theta_v_list:
                         if args.use_lambda:
@@ -285,7 +277,6 @@ if __name__ == "__main__":
                     if match_lqg:
                         lqg_file = open(path + filename, 'rb')
                         lqg_cost = pickle.load(lqg_file)
-                        
                         lqg_file.close()
                         if args.use_lambda:
                             for aux_lambda in lambda_list:
@@ -301,23 +292,7 @@ if __name__ == "__main__":
                                     lqg_cost_values.append(lqg_cost[0])
                 
                     
-    # We obtained the best-parameters for each method (within the examined region)
-    # DRLQC
-    print("Best parameters & Cost within the examined region")
-    print("-------------------------")
-    print("DRLQC")
-    print("Best theta_w: {}, Best theta_v: {}, Best cost: {}".format(drlqc_optimal_theta_w, drlqc_optimal_theta_v, drlqc_optimal_cost))
-    print("-------------------------")
-    print("DRCE")
-    print("Best theta_w: {}, Best theta_v: {}, Best cost: {}".format(drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost))
-    print("-------------------------")
-    print("WDRC")
-    print("Best theta_w: {},  Best cost: {}".format(wdrc_optimal_theta_w, wdrc_optimal_cost))
-    print("-------------------------")
-    print("LQG")
-    print("Cost: {}".format(lqg_cost[0]))               
 
-    exit()
     # Convert lists to numpy arrays
     if args.use_lambda:
         drlqc_lambda_values = np.array(drlqc_lambda_values)

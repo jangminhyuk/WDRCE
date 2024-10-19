@@ -12,9 +12,10 @@ from controllers.DRCE import DRCE
 from controllers.DRLQC import DRLQC
 from numpy.linalg import lstsq, norm
 from joblib import Parallel, delayed
-
+from pykalman import KalmanFilter
 import os
 import pickle
+reg_eps = 1e-6
 
 def uniform(a, b, N=1):
     n = a.shape[0]
@@ -103,11 +104,46 @@ def save_data(path, data):
     output = open(path, 'wb')
     pickle.dump(data, output)
     output.close()
+# Function to generate the true states and measurements (data generation)
+def generate_data(T, nx, ny, nu, A, B, C, mu_w, Sigma_w, mu_v, M, x0_mean, x0_cov, x0_max, x0_min, w_max, w_min, v_max, v_min, dist):
+    u = np.zeros((T, nu, 1))
+    x_true_all = np.zeros((T + 1, nx, 1))  # True state sequences
+    y_all = np.zeros((T, ny, 1))  # Measurements for each sequence
+    
+    # Initialize the true state for each sequence
+    if dist == "normal":
+        x_true = normal(x0_mean, x0_cov)  # initial true state
+    elif dist == "quadratic":
+        x_true = quadratic(x0_max, x0_min)  # initial true state
+    
+    x_true_all[0] = x_true  # Set initial state
+    
+    for t in range(T):
+        # Sample true process noise and measurement noise
+        if dist == "normal":
+            true_w = normal(mu_w, Sigma_w)
+            true_v = normal(mu_v, M)
+        elif dist == "quadratic":
+            true_w = quadratic(w_max, w_min)
+            true_v = quadratic(v_max, v_min)
+
+
+        # Measurement (observation model)
+        y_t = C @ x_true + true_v #Note that y's index is shifted, i.e. y[0] correspondst to y_1
+        y_all[t] = y_t
+        
+        # True state update (process model)
+        x_true = A @ x_true + B @ u[t] + true_w  # true x_t+1
+        x_true_all[t + 1] = x_true
+
+
+    return x_true_all, y_all
 
 def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
     
     lambda_ = 10
     seed = 2024 # Random seed
+    np.random.seed(seed) # fix Random seed!
     # --- Parameter for DRLQC --- #
     tol = 1e-2
     # --- ----- --------#
@@ -122,21 +158,22 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
     ny = 10#output dimension
     temp = np.ones((nx, nx))
     A = 0.2*(np.eye(nx) + np.triu(temp, 1) - np.triu(temp, 2))
-    B= 2*np.eye(10)
+    B= np.eye(10)
     C = Q = R = Qf = np.eye(10) 
     #----------------------------
     # You can change theta_v list and lambda_list ! but you also need to change lists at plot_params4_drlqc_nonzeromean.py to get proper plot
     
     if dist=='normal':
-        theta_v_list = [ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0] # radius of noise ambiguity set
-        theta_w_list = [0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
-        #theta_v_list = [1.0, 2.0] # radius of noise ambiguity set
-        #theta_w_list = [1.0, 2.0] # radius of noise ambiguity set
+        theta_v_list = [ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
+        theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
+        #theta_v_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
+        #theta_w_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
+        #theta_w_list = [6.0]
     else:
-        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0] # radius of noise ambiguity set
-        theta_w_list = [0.2, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
-        theta_v_list = [1.0, 2.0, 3.0] # radius of noise ambiguity set
-        theta_w_list = [1.0, 2.0, 3.0] # radius of noise ambiguity set
+        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
+        theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
+        #theta_v_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
+        #theta_w_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
     lambda_list = [3] # disturbance distribution penalty parameter # not used if use_lambda = False
     theta_w = 1.0 # will not be used if use_lambda = True
     #num_x0_samples = 15 #  N_x0 
@@ -172,218 +209,126 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
         #disturbance distribution parameters
         w_max = None
         w_min = None
-        mu_w = 0.3*np.ones((nx, 1))
-        Sigma_w= 0.6*np.eye(nx)
+        mu_w = 0.5*np.ones((nx, 1))
+        Sigma_w= 1.0*np.eye(nx)
         #initial state distribution parameters
         x0_max = None
         x0_min = None
-        x0_mean = 0.5*np.ones((nx,1))
-        x0_cov = 0.001*np.eye(nx)
+        x0_mean = 0.2*np.ones((nx,1))
+        x0_cov = 0.1*np.eye(nx)
     elif dist == "quadratic":
         #disturbance distribution parameters
-        w_max = 0.3*np.ones(nx)
-        w_min = -0.2*np.ones(nx)
+        w_max = 1.2*np.ones(nx)
+        w_min = -1.6*np.ones(nx)
         mu_w = (0.5*(w_max + w_min))[..., np.newaxis]
         Sigma_w = 3.0/20.0*np.diag((w_max - w_min)**2)
         #initial state distribution parameters
-        x0_max = 0.05*np.ones(nx)
-        x0_min = -0.05*np.ones(nx)
-        x0_max[-1] = 1.01
-        x0_min[-1] = 0.99
+        x0_max = 0.21*np.ones(nx)
+        x0_min = 0.19*np.ones(nx)
         x0_mean = (0.5*(x0_max + x0_min))[..., np.newaxis]
         x0_cov = 3.0/20.0 *np.diag((x0_max - x0_min)**2)
-        
     #-------Noise distribution ---------#
     if noise_dist =="normal":
         v_max = None
         v_min = None
-        M = 3.5*np.eye(ny) #observation noise covariance
-        mu_v = 0.1*np.ones((ny, 1))
+        M = 2.5*np.eye(ny) #observation noise covariance
+        mu_v = 0.2*np.ones((ny, 1))
     elif noise_dist =="quadratic":
-        v_min = -0.2*np.ones(ny)
-        v_max = 0.6*np.ones(ny)
+        v_min = -2.0*np.ones(ny)
+        v_max = 2.5*np.ones(ny)
         mu_v = (0.5*(v_max + v_min))[..., np.newaxis]
         M = 3.0/20.0 *np.diag((v_max-v_min)**2) #observation noise covariance
+    #x0 = x0_mean
+    print(f'real data: \n mu_w: {mu_w}, \n mu_v: {mu_v}, \n Sigma_w: {Sigma_w}, \n Sigma_v: {M}')
     
-    x0 = x0_mean    
-    N=10
-    # -------Estimate the nominal distribution-------
-    # Initialize lists to store data for all sequences
-    x_list = []
-    y_list = []
-    u_list = []
+    N = 1000
+    x_all, y_all = generate_data(N, nx, ny, nu, A, B, C, mu_w, Sigma_w, mu_v, M, x0_mean, x0_cov, x0_max, x0_min, w_max, w_min, v_max, v_min, dist)
+    
+    y_all = y_all.squeeze()
+    eps_param = 1e-5
+    eps_log = 1e-4
+    # Initialize estimates
+    mu_w_hat = np.zeros(nx)
+    mu_v_hat = np.zeros(ny)
+    mu_x0_hat = x0_mean.squeeze()
+    Sigma_w_hat = np.eye(nx)
+    Sigma_v_hat = np.eye(ny)
+    Sigma_x0_hat = x0_cov
+    
+    kf = KalmanFilter(A, C, Sigma_w_hat, Sigma_v_hat, mu_w_hat, mu_v_hat, mu_x0_hat, Sigma_x0_hat,
+                      em_vars=[
+                        'transition_covariance', 'observation_covariance',
+                        'transition_offsets', 'observation_offsets',
+                        #'initial_state_mean', 'initial_state_covariance'
+                      ])
 
-    # Generate N sequences of data with known initial state x[0]
-    for i in range(N):
-        # Initialize state, input, and output arrays for sequence i
-        x = np.zeros((T + 1, nx, 1))
-        y = np.zeros((T + 1, ny, 1))
-        u = np.zeros((T, nu, 1))
+    max_iter = 500
+    loglikelihoods = np.zeros(max_iter)
+    errors_mu_w = []
+    errors_mu_v = []
+    errors_mu_x0 = []
+    errors_Sigma_w = []
+    errors_Sigma_v = []
+    errors_Sigma_x0 = []
 
-        # Set initial state x[0] (known)
-        x[0] = x0
+    
+    for i in range(max_iter):
+        print(f'------- Iteration {i} ------------')
+        kf = kf.em(X=y_all, n_iter=1)
+        loglikelihoods[i] = kf.loglikelihood(y_all)
+        
 
-        # Generate input-output data over time horizon T
-        for t in range(T):
-            # Sample  w_t
-            if dist=="normal":
-                true_w = normal(mu_w, Sigma_w)
-            elif dist=="quadratic":
-                true_w = quadratic(w_max, w_min)
+        Sigma_w_hat = kf.transition_covariance
+        Sigma_v_hat = kf.observation_covariance
+        mu_w_hat = kf.transition_offsets
+        mu_v_hat = kf.observation_offsets
+        mu_x0_hat = kf.initial_state_mean
+        Sigma_x0_hat = kf.initial_state_covariance
+
+
+
+        # Mean estimation errors (Euclidean norms)
+        error_mu_w = np.linalg.norm(mu_w_hat - mu_w)
+        error_mu_v = np.linalg.norm(mu_v_hat - mu_v)
+        error_mu_x0 = np.linalg.norm(mu_x0_hat - x0_mean)
+
+        # Covariance estimation errors (Frobenius norms)
+        error_Sigma_w = np.linalg.norm(Sigma_w_hat - Sigma_w, 'fro')
+        error_Sigma_v = np.linalg.norm(Sigma_v_hat - M, 'fro')
+        error_Sigma_x0 = np.linalg.norm(Sigma_x0_hat - x0_cov, 'fro')
+        
                 
-            # Sample v_t
-            if noise_dist=="normal":
-                true_v = normal(mu_v, M)
-            elif noise_dist=="quadratic":
-                true_v = quadratic(v_max, v_min)
-                
-            # Sample control input u_t from zero-mean Gaussian distribution
-            u[t] = np.random.multivariate_normal(np.zeros(nu), np.eye(nu)).reshape(nu, 1)
-            # Update state x_{t+1}
-            x[t + 1] = A @ x[t] + B @ u[t] + true_w
-            # Generate measurement y_{t}
-            y[t] = C @ x[t] + true_v 
+        # Store errors for plotting
+        errors_mu_w.append(error_mu_w)
+        errors_mu_v.append(error_mu_v)
+        errors_mu_x0.append(error_mu_x0)
+        errors_Sigma_w.append(error_Sigma_w)
+        errors_Sigma_v.append(error_Sigma_v)
+        errors_Sigma_x0.append(error_Sigma_x0)
 
-        # Generate measurement y[T] at final state x[T]
-        true_v_T = np.random.multivariate_normal(mu_v.flatten(), M).reshape(ny, 1)
-        y[T] = C @ x[T] + true_v_T
-
-        # Append sequence data to lists
-        x_list.append(x)
-        y_list.append(y)
-        u_list.append(u)
-
-    # --- Estimation Procedure ---
-
-    # Total number of unknowns
-    # Each sequence contributes T*nx states (excluding x[0])
-    # We have mu_w and mu_v to estimate (common across sequences)
-    D = N * nx * T + nx + ny  # x[1:T] for all sequences, mu_w, mu_v
-
-    # Total number of residuals
-    N_residuals = N * (nx * T + ny * (T + 1))
-
-    # Initialize matrices for least squares
-    M_ls = np.zeros((N_residuals, D))
-    b_ls = np.zeros((N_residuals, 1))
-
-    # Helper functions to index variables in theta
-    def idx_x(i, t):
-        # Index for state x_t in sequence i (excluding x[0])
-        # t ranges from 1 to T
-        start = i * nx * T + (t - 1) * nx
-        end = start + nx
-        return slice(start, end)
-
-    def idx_mu_w():
-        # Indices for mu_w
-        start = N * nx * T
-        end = start + nx
-        return slice(start, end)
-
-    def idx_mu_v():
-        # Indices for mu_v
-        start = N * nx * T + nx
-        end = start + ny
-        return slice(start, end)
-
-    # Build the M matrix and b vector
-    row = 0  # Row counter
-
-    for i in range(N):
-        x = x_list[i]
-        y = y_list[i]
-        u = u_list[i]
-
-        # Process equations: x_{t+1} - A x_t - B u_t - mu_w = 0
-        for t in range(T):
-            # Indices in theta
-            if t == 0:
-                # x[0] is known
-                x_t = x[0]
-            else:
-                idx_xt = idx_x(i, t)
-
-            idx_xt1 = idx_x(i, t + 1)
-            idx_muw = idx_mu_w()
-            # Fill M_ls matrix
-            M_ls[row:row + nx, idx_xt1] = np.eye(nx)
-            if t == 0:
-                # Subtract A x[0] and include it in b_ls
-                b_ls[row:row + nx, 0] = (B @ u[t] + A @ x[0]).flatten()
-            else:
-                M_ls[row:row + nx, idx_xt] = -A
-                b_ls[row:row + nx, 0] = (B @ u[t]).flatten()
-            M_ls[row:row + nx, idx_muw] = -np.eye(nx)
-            row += nx
-
-        # Measurement equations: y_t - C x_t - mu_v = 0
-        for t in range(T + 1):
-            # Indices in theta
-            if t == 0:
-                # x[0] is known
-                x_t = x[0]
-                b_ls[row:row + ny, 0] = (-y[t] + C @ x[0]).flatten()
-
-            else:
-                idx_xt = idx_x(i, t)
-                M_ls[row:row + ny, idx_xt] = -C
-                b_ls[row:row + ny, 0] = -y[t].flatten()
-            idx_muv = idx_mu_v()
-            M_ls[row:row + ny, idx_muv] = -np.eye(ny)
-            row += ny
-
-    # Solve the least squares problem
-    theta_hat, residuals, rank, s = lstsq(M_ls, b_ls, rcond=None)
-
-    # Extract estimated mu_w and mu_v
-    mu_w_hat = theta_hat[idx_mu_w()].reshape(nx, 1)
-    mu_v_hat = theta_hat[idx_mu_v()].reshape(ny, 1)
-
-    # Compute residuals to estimate covariances
-    w_hat_list = []
-    v_hat_list = []
-
-    for i in range(N):
-        x = x_list[i]
-        y = y_list[i]
-        u = u_list[i]
-
-        # Extract estimated states x_t (t = 1 to T)
-        x_hat = np.zeros((T + 1, nx, 1))
-        x_hat[0] = x0  # Known initial state
-        for t in range(1, T + 1):
-            idx_xt = idx_x(i, t)
-            x_hat[t] = theta_hat[idx_xt].reshape(nx, 1)
-
-        # Compute process noise residuals for sequence i
-        w_hat = np.zeros((T, nx, 1))
-        for t in range(T):
-            w_hat[t] = x_hat[t + 1] - A @ x_hat[t] - B @ u[t] - mu_w_hat
-        w_hat_list.append(w_hat)
-
-        # Compute measurement noise residuals for sequence i
-        v_hat = np.zeros((T + 1, ny, 1))
-        for t in range(T + 1):
-            v_hat[t] = y[t] - C @ x_hat[t] - mu_v_hat
-        v_hat_list.append(v_hat)
-
-    # Estimate covariance matrices
-    Sigma_w_hat = sum([sum([w @ w.T for w in w_hat_list[i]]) for i in range(N)]) / (N * T)
-    M_hat = sum([sum([v @ v.T for v in v_hat_list[i]]) for i in range(N)]) / (N * (T + 1))
-
-    # --- Quantify Estimation Errors ---
-
-    # Mean estimation errors (Euclidean norms)
-    error_mu_w = norm(mu_w_hat - mu_w)
-    error_mu_v = norm(mu_v_hat - mu_v)
-
-    # Covariance estimation errors (Frobenius norms)
-    error_Sigma_w = norm(Sigma_w_hat - Sigma_w, 'fro')
-    error_M = norm(M_hat - M, 'fro')
-
-    # --- Results ---
-
+        
+        
+        print("\nEstimation Error (mu_w): {:.6f}".format(error_mu_w))
+        print("\nEstimation Error (Sigma_w): {:.6f}".format(error_Sigma_w))
+        print("\nEstimation Error (mu_v): {:.6f}".format(error_mu_v))
+        print("\nEstimation Error (M): {:.6f}".format(error_Sigma_v))
+        print("\nEstimation Error (x0_mean): {:.6f}".format(error_mu_x0))
+        print("\nEstimation Error (x0_cov): {:.6f}".format(error_Sigma_x0))
+        print("\nLog-Likelihood: {:.6f}".format(loglikelihoods[i]))
+        
+        params_conv = np.all([error_mu_w <= eps_param, error_mu_v <= eps_param, error_mu_x0 <= eps_param, np.all(error_Sigma_w <= eps_param), np.all(error_Sigma_v <= eps_param), np.all(error_Sigma_x0 <= eps_param)])
+        
+        if i>0:
+            if loglikelihoods[i] - loglikelihoods[i-1] <= eps_log and params_conv:
+                print('Converged!')
+                break
+    #exit()
+    # Choose the best one
+    print("Nominal distributions are ready")
+    
+    ## Reshape
+    mu_w_hat = np.array(mu_w_hat).reshape(-1,1)
+    mu_v_hat = np.array(mu_v_hat).reshape(-1,1)
     print("Estimated mu_w:")
     print(mu_w_hat)
     print("\nTrue mu_w:")
@@ -400,16 +345,13 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
     print(mu_v_hat)
     print("\nTrue mu_v:")
     print(mu_v)
-    print("\nEstimation Error (mu_v): {:.6f}".format(error_mu_v))
 
+    M_hat = Sigma_v_hat
     print("\nEstimated M:")
     print(M_hat)
     print("\nTrue M:")
     print(M)
-    print("\nEstimation Error (M): {:.6f}".format(error_M))
-    
-    
-    
+    #exit()
     # ----- Construct Batch matrix for DRLQC-------------------
     W_hat = np.zeros((nx, nx, T+1))
     V_hat = np.zeros((ny, ny, T+1))
@@ -424,7 +366,7 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
     x0_mean_hat = x0_mean # Assume known initial state for this experiment
     x0_cov_hat = x0_cov
     
-     # Create paths for saving individual results
+    # Create paths for saving individual results
     temp_results_path = "./temp_results/"
     if not os.path.exists(temp_results_path):
         os.makedirs(temp_results_path)
@@ -443,9 +385,9 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
                 print("disturbance : ", dist, "/ noise : ", noise_dist, "/ num_noise : ", num_noise, "/ theta_w: ", theta_w, "/ theta_v : ", theta)
 
             if use_lambda:
-                path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/io/".format(dist, noise_dist)
+                path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/ioreal/".format(dist, noise_dist)
             else:
-                path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/io/".format(dist, noise_dist)
+                path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/ioreal/".format(dist, noise_dist)
                 
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -464,12 +406,11 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
             #-----Initialize controllers-----
             drlqc = DRLQC(theta_w, theta, theta_x0, T, dist, noise_dist, system_data, mu_w_hat, W_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, mu_v_hat, V_hat, x0_mean_hat, x0_cov_hat, tol)
             if use_optimal_lambda == True:
-                lambda_ = WDRC_lambda[idx_w][idx_v]
-            #print(lambda_)
-            wdrc = WDRC(lambda_, theta_w, T, dist, noise_dist, system_data, mu_w_hat, Sigma_w_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, mu_v_hat, M_hat, x0_mean_hat, x0_cov_hat, use_lambda, use_optimal_lambda)
-            if use_optimal_lambda == True:
                 lambda_ = DRCE_lambda[idx_w][idx_v]
             drce = DRCE(lambda_, theta_w, theta, theta_x0, T, dist, noise_dist, system_data, mu_w_hat, Sigma_w_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, mu_v_hat,  M_hat, x0_mean_hat, x0_cov_hat, use_lambda, use_optimal_lambda)
+            if use_optimal_lambda == True:
+                lambda_ = WDRC_lambda[idx_w][idx_v]
+            wdrc = WDRC(lambda_, theta_w, T, dist, noise_dist, system_data, mu_w_hat, Sigma_w_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, mu_v_hat, M_hat, x0_mean_hat, x0_cov_hat, use_lambda, use_optimal_lambda)
             lqg = LQG(T, dist, noise_dist, system_data, mu_w_hat, Sigma_w_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, mu_v_hat, M_hat , x0_mean_hat, x0_cov_hat)
         
             drlqc.solve_sdp()
@@ -491,7 +432,7 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
 
             print("WDRC_lambda[{}][{}] :{} ".format(idx_w, idx_v, wdrc.lambda_)  )
             print('---------------------')
-            
+            np.random.seed(seed) # fix Random seed!
             #----------------------------
             print("Running DRCE Forward step ...")
             for i in range(num_sim):
@@ -511,7 +452,7 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
             output_J_DRCE_std.append(J_DRCE_std[0])
             print(" Average cost (DRCE) : ", J_DRCE_mean[0])
             print(" std (DRCE) : ", J_DRCE_std[0])
-            
+            np.random.seed(seed) # fix Random seed!
             #----------------------------
             print("Running DRLQC Forward step ...")
             for i in range(num_sim):
@@ -591,9 +532,9 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
             
             #Save all raw data
             if use_lambda:
-                rawpath = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/io/raw/".format(dist, noise_dist)
+                rawpath = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/ioreal/raw/".format(dist, noise_dist)
             else:
-                rawpath = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/io/raw/".format(dist, noise_dist)
+                rawpath = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/ioreal/raw/".format(dist, noise_dist)
                 
             if not os.path.exists(rawpath):
                 os.makedirs(rawpath)
@@ -633,20 +574,20 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
                 DRCE_lambda[idx_w][idx_v] = load_pickle_data(drce_lambda_filename)
                 
     if use_lambda:
-        path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/io/".format(dist, noise_dist)
+        path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/ioreal/".format(dist, noise_dist)
     else:
-        path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/io/".format(dist, noise_dist)
+        path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/ioreal/".format(dist, noise_dist)
         save_data(path + 'nonzero_wdrc_lambda.pkl',WDRC_lambda)
         save_data(path + 'nonzero_drce_lambda.pkl',DRCE_lambda)
         
     
             
     print("Params data generation Completed !")
-    print("Please make sure your lambda_list(or theta_w_list) and theta_v_list plot_params4_usingio.py is as desired")
+    print("Please make sure your lambda_list(or theta_w_list) and theta_v_list plot_params4_EM.py is as desired")
     if use_lambda:
-        print("Now use : python plot_params4_usingio.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist)
+        print("Now use : python plot_params4_EM.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist)
     else:
-        print("Now use : python plot_params4_usingio.py --dist "+ dist + " --noise_dist " + noise_dist)
+        print("Now use : python plot_params4_EM.py --dist "+ dist + " --noise_dist " + noise_dist)
     
             
 

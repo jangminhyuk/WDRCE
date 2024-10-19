@@ -83,7 +83,7 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     legend = fig.legend(
     handles=surfaces,
     labels=labels,
-    bbox_to_anchor=(0.8, 0.7),
+    bbox_to_anchor=(0.45, 0.7),
     loc='center right',
     frameon=True,
     framealpha=1.0,
@@ -95,9 +95,11 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     # Set labels
     ax.set_xlabel(r'$\lambda$', fontsize=16)
     ax.set_ylabel(r'$\theta_v$', fontsize=16)
+    ax.set_yticks([1.0, 2.0, 3.0, 4.0])
+    
     ax.set_zlabel(r'Total Cost', fontsize=16, rotation=90, labelpad=3)
     
-    ax.view_init(elev=15, azim=40)
+    ax.view_init(elev=10, azim=110)
     ax.zaxis.set_rotate_label(False)
     a = ax.zaxis.label.get_rotation()
     if a<180:
@@ -119,9 +121,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.use_lambda = True
     if args.use_lambda:
-        path = "./results/{}_{}/finite/multiple/params_lambda/s21/".format(args.dist, args.noise_dist)
+        path = "./results/{}_{}/finite/multiple/params_lambda/vehicle_EM/".format(args.dist, args.noise_dist)
     else:
-        path = "./results/{}_{}/finite/multiple/params_thetas/s21/".format(args.dist, args.noise_dist)
+        path = "./results/{}_{}/finite/multiple/params_thetas/vehicle_EM/".format(args.dist, args.noise_dist)
 
     #Load data
     drce_theta_w_values =[]
@@ -143,11 +145,13 @@ if __name__ == "__main__":
     
     theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
     theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
-    
+    theta_v_list = [1.0, 2.0, 3.0, 4.0]
     if args.dist=='normal':
         lambda_list = [15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
+        lambda_list = [17, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
     else:
         lambda_list = [15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
+        lambda_list = [20, 30, 40, 50] # disturbance distribution penalty parameter
     # Regular expression pattern to extract numbers from file names
     
     

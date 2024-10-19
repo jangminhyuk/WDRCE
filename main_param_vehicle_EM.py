@@ -7,7 +7,7 @@ from controllers.LQG import LQG
 from controllers.WDRC import WDRC
 from controllers.DRCE import DRCE
 from joblib import Parallel, delayed
-
+from pykalman import KalmanFilter
 
 import os
 import pickle
@@ -90,11 +90,45 @@ def save_data(path, data):
     output = open(path, 'wb')
     pickle.dump(data, output)
     output.close()
+# Function to generate the true states and measurements (data generation)
+def generate_data(T, nx, ny, nu, A, B, C, mu_w, Sigma_w, mu_v, M, x0_mean, x0_cov, x0_max, x0_min, w_max, w_min, v_max, v_min, dist):
+    u = np.zeros((T, nu, 1))
+    x_true_all = np.zeros((T + 1, nx, 1))  # True state sequences
+    y_all = np.zeros((T, ny, 1))  # Measurements for each sequence
+    
+    # Initialize the true state for each sequence
+    if dist == "normal":
+        x_true = normal(x0_mean, x0_cov)  # initial true state
+    elif dist == "quadratic":
+        x_true = quadratic(x0_max, x0_min)  # initial true state
+    
+    x_true_all[0] = x_true  # Set initial state
+    
+    for t in range(T):
+        # Sample true process noise and measurement noise
+        if dist == "normal":
+            true_w = normal(mu_w, Sigma_w)
+            true_v = normal(mu_v, M)
+        elif dist == "quadratic":
+            true_w = quadratic(w_max, w_min)
+            true_v = quadratic(v_max, v_min)
 
+
+        # Measurement (observation model)
+        y_t = C @ x_true + true_v #Note that y's index is shifted, i.e. y[0] correspondst to y_1
+        y_all[t] = y_t
+        
+        # True state update (process model)
+        x_true = A @ x_true + B @ u[t] + true_w  # true x_t+1
+        x_true_all[t + 1] = x_true
+
+
+    return x_true_all, y_all
 def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
     
     lambda_ = 10
     seed = 2024 # Random seed
+    np.random.seed(seed) # fix Random seed!
     noisedist = [noise_dist1]
     #noisedist = ["normal", "uniform", "quadratic"]
     num_noise_list = [num_noise_samples]
@@ -157,22 +191,26 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
     #----------------------------
     # You can change theta_v list and lambda_list ! but you also need to change lists at plot_params.py to get proper plot
     
-    theta_v_list = [0.1, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
+    theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    
     theta_w_list = [0.1, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
     
     if dist=='normal':
         lambda_list = [15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
+        lambda_list = [17, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
+        theta_v_list = [1.0, 2.0, 3.0, 4.0]
     else:
         lambda_list = [15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
+        lambda_list = [20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
+        theta_v_list = [1.0, 2.0, 3.0, 4.0]
     
     theta_x0 = 0.5 # radius of initial state ambiguity set
-    use_lambda = False # If use_lambda is True, we will use lambda_list. If use_lambda is False, we will use theta_w_list
+    use_lambda = True # If use_lambda is True, we will use lambda_list. If use_lambda is False, we will use theta_w_list
     use_optimal_lambda = False
     if use_lambda:
         dist_parameter_list = lambda_list
     else:
         dist_parameter_list = theta_w_list
-    
     # Lambda list (from the given theta_w, WDRC and WDR-CE calcluates optimized lambda)
     WDRC_lambda_file = open('./inputs/nonzero_qq/nonzero_wdrc_lambda.pkl', 'rb')
     WDRC_lambda = pickle.load(WDRC_lambda_file)
@@ -184,7 +222,168 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
     # Uncomment Below 2 lines to save optimal lambda, using your own distributions.
     WDRC_lambda = np.zeros((len(theta_w_list),len(theta_v_list)))
     DRCE_lambda = np.zeros((len(theta_w_list),len(theta_v_list)))
+    #-------Disturbance Distribution-------
+    if dist == "normal":
+        #disturbance distribution parameters
+        w_max = None
+        w_min = None
+        mu_w = 0.3*np.ones((nx, 1))
+        Sigma_w= 0.3*np.eye(nx)
+        #initial state distribution parameters
+        x0_max = None
+        x0_min = None
+        x0_mean = 0.2*np.ones((nx,1))
+        x0_cov = 0.2*np.eye(nx)
+    elif dist == "quadratic":
+        #disturbance distribution parameters
+        w_max = 1.2*np.ones(nx)
+        w_min = -0.6*np.ones(nx)
+        mu_w = (0.5*(w_max + w_min))[..., np.newaxis]
+        Sigma_w = 3.0/20.0*np.diag((w_max - w_min)**2)
+        #initial state distribution parameters
+        x0_max = 0.5*np.ones(nx)
+        x0_min = 0.0*np.ones(nx)
+        x0_mean = (0.5*(x0_max + x0_min))[..., np.newaxis]
+        x0_cov = 3.0/20.0 *np.diag((x0_max - x0_min)**2)
+    #-------Noise distribution ---------#
+    if noise_dist1 =="normal":
+        v_max = None
+        v_min = None
+        M = 3.0*np.eye(ny) #observation noise covariance
+        mu_v = 0.5*np.ones((ny, 1))
+    elif noise_dist1 =="quadratic":
+        v_min = -3.0*np.ones(ny)
+        v_max = 1.5*np.ones(ny)
+        mu_v = (0.5*(v_max + v_min))[..., np.newaxis]
+        M = 3.0/20.0 *np.diag((v_max-v_min)**2) #observation noise covariance
+        
+    print(f'real data: \n mu_w: {mu_w}, \n mu_v: {mu_v}, \n Sigma_w: {Sigma_w}, \n Sigma_v: {M}')
     
+    N = 500
+    x_all, y_all = generate_data(N, nx, ny, nu, A, B, C, mu_w, Sigma_w, mu_v, M, x0_mean, x0_cov, x0_max, x0_min, w_max, w_min, v_max, v_min, dist)
+    
+    y_all = y_all.squeeze()
+    eps_param = 1e-5
+    eps_log = 1e-4
+    # Initialize estimates
+    mu_w_hat = np.zeros(nx)
+    mu_v_hat = np.zeros(ny)
+    mu_x0_hat = x0_mean.squeeze()
+    Sigma_w_hat = np.eye(nx)
+    Sigma_v_hat = np.eye(ny)
+    Sigma_x0_hat = x0_cov
+    
+    kf = KalmanFilter(A, C, Sigma_w_hat, Sigma_v_hat, mu_w_hat, mu_v_hat, mu_x0_hat, Sigma_x0_hat,
+                      em_vars=[
+                        'transition_covariance', 'observation_covariance',
+                        'transition_offsets', 'observation_offsets',
+                        #'initial_state_mean', 'initial_state_covariance'
+                      ])
+
+    max_iter = 50
+    loglikelihoods = np.zeros(max_iter)
+    errors_mu_w = []
+    errors_mu_v = []
+    errors_mu_x0 = []
+    errors_Sigma_w = []
+    errors_Sigma_v = []
+    errors_Sigma_x0 = []
+
+    
+    for i in range(max_iter):
+        print(f'------- Iteration {i} ------------')
+        kf = kf.em(X=y_all, n_iter=1)
+        loglikelihoods[i] = kf.loglikelihood(y_all)
+        
+
+        Sigma_w_hat = kf.transition_covariance
+        Sigma_v_hat = kf.observation_covariance
+        mu_w_hat = kf.transition_offsets
+        mu_v_hat = kf.observation_offsets
+        mu_x0_hat = kf.initial_state_mean
+        Sigma_x0_hat = kf.initial_state_covariance
+
+
+
+        # Mean estimation errors (Euclidean norms)
+        error_mu_w = np.linalg.norm(mu_w_hat - mu_w)
+        error_mu_v = np.linalg.norm(mu_v_hat - mu_v)
+        error_mu_x0 = np.linalg.norm(mu_x0_hat - x0_mean)
+
+        # Covariance estimation errors (Frobenius norms)
+        error_Sigma_w = np.linalg.norm(Sigma_w_hat - Sigma_w, 'fro')
+        error_Sigma_v = np.linalg.norm(Sigma_v_hat - M, 'fro')
+        error_Sigma_x0 = np.linalg.norm(Sigma_x0_hat - x0_cov, 'fro')
+        
+                
+        # Store errors for plotting
+        errors_mu_w.append(error_mu_w)
+        errors_mu_v.append(error_mu_v)
+        errors_mu_x0.append(error_mu_x0)
+        errors_Sigma_w.append(error_Sigma_w)
+        errors_Sigma_v.append(error_Sigma_v)
+        errors_Sigma_x0.append(error_Sigma_x0)
+
+        
+        
+        print("\nEstimation Error (mu_w): {:.6f}".format(error_mu_w))
+        print("\nEstimation Error (Sigma_w): {:.6f}".format(error_Sigma_w))
+        print("\nEstimation Error (mu_v): {:.6f}".format(error_mu_v))
+        print("\nEstimation Error (M): {:.6f}".format(error_Sigma_v))
+        print("\nEstimation Error (x0_mean): {:.6f}".format(error_mu_x0))
+        print("\nEstimation Error (x0_cov): {:.6f}".format(error_Sigma_x0))
+        print("\nLog-Likelihood: {:.6f}".format(loglikelihoods[i]))
+        
+        params_conv = np.all([error_mu_w <= eps_param, error_mu_v <= eps_param, error_mu_x0 <= eps_param, np.all(error_Sigma_w <= eps_param), np.all(error_Sigma_v <= eps_param), np.all(error_Sigma_x0 <= eps_param)])
+        
+        if i>0:
+            if loglikelihoods[i] - loglikelihoods[i-1] <= eps_log and params_conv:
+                print('Converged!')
+                break
+    #exit()
+    # Choose the best one
+    print("Nominal distributions are ready")
+    
+    ## Reshape
+    mu_w_hat = np.array(mu_w_hat).reshape(-1,1)
+    mu_v_hat = np.array(mu_v_hat).reshape(-1,1)
+    print("Estimated mu_w:")
+    print(mu_w_hat)
+    print("\nTrue mu_w:")
+    print(mu_w)
+    print("\nEstimation Error (mu_w): {:.6f}".format(error_mu_w))
+
+    print("\nEstimated Sigma_w:")
+    print(Sigma_w_hat)
+    print("\nTrue Sigma_w:")
+    print(Sigma_w)
+    print("\nEstimation Error (Sigma_w): {:.6f}".format(error_Sigma_w))
+
+    print("\nEstimated mu_v:")
+    print(mu_v_hat)
+    print("\nTrue mu_v:")
+    print(mu_v)
+
+    M_hat = Sigma_v_hat
+    print("\nEstimated M:")
+    print(M_hat)
+    print("\nTrue M:")
+    print(M)
+   
+   
+    mu_w_hat = np.tile(mu_w_hat, (T,1,1) )
+    mu_v_hat = np.tile(mu_v_hat, (T+1,1,1) )
+    Sigma_w_hat = np.tile(Sigma_w_hat, (T,1,1))
+    M_hat = np.tile(M_hat, (T+1,1,1))
+    x0_mean_hat = x0_mean # Assume known initial state for this experiment
+    x0_cov_hat = x0_cov     
+    
+    
+       
+    # Create paths for saving individual results
+    temp_results_path = "./temp_results/"
+    if not os.path.exists(temp_results_path):
+        os.makedirs(temp_results_path)
     def perform_simulation(lambda_, noise_dist, dist_parameter, theta, idx_w, idx_v):
         for num_noise in num_noise_list:
             
@@ -194,6 +393,7 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
             print("number of disturbance sample : ", num_samples)
             if use_lambda:
                 lambda_ = dist_parameter
+                theta_w = 1.0 # place holder
                 print("disturbance : ", dist, "/ noise : ", noise_dist, "/ num_noise : ", num_noise, "/ lambda: ", lambda_, "/ theta_v : ", theta)
             else:
                 theta_w = dist_parameter
@@ -201,59 +401,14 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
             
             
             if use_lambda:
-                path = "./results/{}_{}/finite/multiple/params_lambda/s21/".format(dist, noise_dist)
+                path = "./results/{}_{}/finite/multiple/params_lambda/vehicle_EM/".format(dist, noise_dist)
             else:
-                path = "./results/{}_{}/finite/multiple/params_thetas/s21/".format(dist, noise_dist)
+                path = "./results/{}_{}/finite/multiple/params_thetas/vehicle_EM/".format(dist, noise_dist)
             
             if not os.path.exists(path):
                 os.makedirs(path)
         
-            #-------Disturbance Distribution-------
-            if dist == "normal":
-                #disturbance distribution parameters
-                w_max = None
-                w_min = None
-                mu_w = 1.0*np.ones((nx, 1))
-                Sigma_w= 0.1*np.eye(nx)
-                #initial state distribution parameters
-                x0_max = None
-                x0_min = None
-                x0_mean = 0.1*np.ones((nx,1))
-                x0_cov = 0.1*np.eye(nx)
-            elif dist == "quadratic":
-                #disturbance distribution parameters
-                w_max = 0.8*np.ones(nx)
-                w_min = -0.4*np.ones(nx)
-                mu_w = (0.5*(w_max + w_min))[..., np.newaxis]
-                Sigma_w = 3.0/20.0*np.diag((w_max - w_min)**2)
-                #initial state distribution parameters
-                x0_max = 0.5*np.ones(nx)
-                x0_min = 0.0*np.ones(nx)
-                x0_mean = (0.5*(x0_max + x0_min))[..., np.newaxis]
-                x0_cov = 3.0/20.0 *np.diag((x0_max - x0_min)**2)
-                
-            #-------Noise distribution ---------#
-            if noise_dist =="normal":
-                v_max = None
-                v_min = None
-                M = 1.0*np.eye(ny) #observation noise covariance
-                mu_v = 0.5*np.ones((ny, 1))
-            elif noise_dist =="quadratic":
-                v_min = -1.0*np.ones(ny)
-                v_max = 1.5*np.ones(ny)
-                mu_v = (0.5*(v_max + v_min))[..., np.newaxis]
-                M = 3.0/20.0 *np.diag((v_max-v_min)**2) #observation noise covariance
-                
-                
-            #-------Estimate the nominal distribution-------
-            # Nominal initial state distribution
-            x0_mean_hat, x0_cov_hat = gen_sample_dist(dist, 1, num_x0_samples, mu_w=x0_mean, Sigma_w=x0_cov, w_max=x0_max, w_min=x0_min)
-            # Nominal Disturbance distribution
-            mu_hat, Sigma_hat = gen_sample_dist(dist, T+1, num_samples, mu_w=mu_w, Sigma_w=Sigma_w, w_max=w_max, w_min=w_min)
-            # Nominal Noise distribution
-            v_mean_hat, M_hat = gen_sample_dist(noise_dist, T+1, num_noise, mu_w=mu_v, Sigma_w=M, w_max=v_max, w_min=v_min)
             
-            M_hat = M_hat + 1e-6*np.eye(ny) # to prevent numerical error from inverse in standard KF at small sample size
             
             #-------Create a random system-------
             system_data = (A, B, C, Q, Qf, R, M)
@@ -263,14 +418,14 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
             output_wdrc_list = []
             output_drce_list = []
             
-            #Initialize controllers
-            if use_lambda:
-                lambda_ = WDRC_lambda[idx_w][idx_v]
-            wdrc = WDRC(lambda_, theta_w, T, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat, M_hat, x0_mean_hat[0], x0_cov_hat[0], use_lambda, use_optimal_lambda)
-            if use_lambda:
-                lambda_ = DRCE_lambda[idx_w][idx_v]
-            drce = DRCE(lambda_, theta_w, theta, theta_x0, T, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat,  M_hat, x0_mean_hat[0], x0_cov_hat[0], use_lambda, use_optimal_lambda)
-            lqg = LQG(T, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat, M_hat , x0_mean_hat[0], x0_cov_hat[0])
+            # #Initialize controllers
+            # if use_lambda:
+            #     lambda_ = WDRC_lambda[idx_w][idx_v]
+            wdrc = WDRC(lambda_, theta_w, T, dist, noise_dist, system_data, mu_w_hat, Sigma_w_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, mu_v_hat, M_hat, x0_mean_hat, x0_cov_hat, use_lambda, use_optimal_lambda)
+            # if use_lambda:
+            #     lambda_ = DRCE_lambda[idx_w][idx_v]
+            drce = DRCE(lambda_, theta_w, theta, theta_x0, T, dist, noise_dist, system_data, mu_w_hat, Sigma_w_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, mu_v_hat,  M_hat, x0_mean_hat, x0_cov_hat, use_lambda, use_optimal_lambda)
+            lqg = LQG(T, dist, noise_dist, system_data, mu_w_hat, Sigma_w_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, mu_v_hat, M_hat , x0_mean_hat, x0_cov_hat)
 
             wdrc.backward()
             drce.backward()
@@ -281,7 +436,8 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
             #WDRC_lambda[idx_w][idx_v] = wdrc.lambda_
             #DRCE_lambda[idx_w][idx_v] = drce.lambda_
             print('---------------------')
-            
+            #----------------------------             
+            np.random.seed(seed) # fix Random seed!
             #----------------------------
             print("Running DRCE Forward step ...")
             for i in range(num_sim):
@@ -370,11 +526,11 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
                 )        
                 
     print("Params data generation Completed !")
-    print("Please make sure your lambda_list(or theta_w_list) and theta_v_list in plot_params_21.py is as desired")
+    print("Please make sure your lambda_list(or theta_w_list) and theta_v_list in plot_params_vehicle_EM.py is as desired")
     if use_lambda:
-        print("Now use : python plot_params_21.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist)
+        print("Now use : python plot_params_vehicle_EM.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist)
     else:
-        print("Now use : python plot_params_21.py --dist "+ dist + " --noise_dist " + noise_dist)
+        print("Now use : python plot_params_vehicle_EM.py --dist "+ dist + " --noise_dist " + noise_dist)
     
             
 

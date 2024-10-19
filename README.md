@@ -3,7 +3,7 @@ Wasserstein Distributionally Robust Control and State Estimation for Partially O
 
 This repository includes the source code for implementing 
 Linear-Quadratic-Gaussian(LQG), Wasserstein Distributionally Robust Controller(WDRC), Distributionally Robust Linear Quadratic Control (DRLQC), WDRC+DRKF, WDRC+DRMMSE,
-and Distributionally Robust Control and Estimation(WDRCE) [Ours]
+and Distributionally Robust Control and Estimation(WDR-CE) [Ours]
 
 ## Requirements
 - Python (>= 3.5)
@@ -15,40 +15,31 @@ and Distributionally Robust Control and Estimation(WDRCE) [Ours]
 - **[MOSEK (>= 9.3)](https://www.mosek.com/)**
 - (pickle5) if relevant error occurs
 - joblib (>=1.4.2)
+- pykalmin (>=0.9.7)
 ## Additional Requirements to run DRLQC
 - Pytorch 2.0
 - [Pymanopt] https://pymanopt.org/
 
 ## Code explanation
 ---
-### Zero-mean Gaussian
+### Comparison including DRLQC (a) Gaussian
 First, generate the Total Cost data using
 ```
-python main_param_zeromean.py
+python main_param_EM.py --dist normal --noise_dist normal
 ```
 After data generation, plot the results using
 ```
-python plot_params4_drlqc_zeromean.py
+python plot_params4_EM.py --dist normal --noise_dist normal
 ```
 ---
-### Zero-mean U-Quadratic
+### Comparison including DRLQC (b) U-Quadratic
 First, generate the Total Cost data using
 ```
-python main_param_zeromean.py --dist quadratic --noise_dist quadratic
+python main_param_EM.py --dist quadratic --noise_dist quadratic
 ```
 After data generation, plot the results using
 ```
-python plot_params4_drlqc_zeromean.py --dist quadratic --noise_dist quadratic
-```
----
-### Nonzero-mean U-Quadratic
-First, generate the Total Cost data using
-```
-python main_param_nonzeromean.py --dist quadratic --noise_dist quadratic
-```
-After data generation, plot the results using
-```
-python plot_params4_drlqc_nonzeromean.py --dist quadratic --noise_dist quadratic
+python plot_params4_EM.py --dist quadratic --noise_dist quadratic
 ```
 ---
 ### Computation Time
@@ -60,6 +51,17 @@ Note that main_time.py is a time-consuming process.
 After Data ge1neration, plot the results using
 ```
 python plot_time.py
+```
+---
+### Out-of-sample Performacne (a), Reliability (b)
+First, generate the data using
+```
+python main_OS_parallel.py
+```
+Note that this Out-of-Sample Experiment is a time consuming process.
+After data generation, plot Figure (a), (b) using
+```
+python plot_osp.py
 ```
 ---
 ### Estimator Performance (a)
@@ -102,53 +104,22 @@ After data generation, plot the results using
 python plot_params_long.py --dist quadratic --noise_dist quadratic
 ```
 ---
-### Out-of-sample Performacne (a), Reliability (b)
-First, generate the data using
-```
-python main_OS_parallel.py
-```
-Be aware that this Out-of-Sample Experiment is a time consuming process.
-After data generation, plot Figure (a), (b) using
-```
-python plot_osp.py
-```
----
-### Vehicle Control Problem : Noise sample size (a)
+### Vehicle Control Problem : Total Cost (a) Gaussian
 First, generate the Total Cost data using
 ```
-python main_3.py
+python main_param_vehicle_EM.py --dist normal --noise_dist normal
 ```
 After data generation, plot the results using
 ```
-python plot_J.py
+python plot_params_vehicle_EM.py --dist normal --noise_dist normal
 ```
 ---
-### Vehicle Control Problem : Noise sample size (b)
+### Vehicle Control Problem : Total Cost (b) U-Quadratic
 First, generate the Total Cost data using
 ```
-python main_3.py --dist quadratic --noise_dist quadratic
+python main_param_vehicle_EM.py --dist quadratic --noise_dist quadratic
 ```
 After data generation, plot the results using
 ```
-python plot_J.py --dist quadratic --noise_dist quadratic
-```
----
-### Vehicle Control Problem : Total Cost (a)
-First, generate the Total Cost data using
-```
-python main_param_s21.py
-```
-After data generation, plot the results using
-```
-python plot_params_21.py
-```
----
-### Vehicle Control Problem : Total Cost (b)
-First, generate the Total Cost data using
-```
-python main_param_s21.py --dist quadratic --noise_dist quadratic
-```
-After data generation, plot the results using
-```
-python plot_params_21.py --dist quadratic --noise_dist quadratic
+python plot_params_vehicle_EM.py --dist quadratic --noise_dist quadratic
 ```
