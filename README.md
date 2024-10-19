@@ -1,9 +1,9 @@
-Wasserstein Distributionally Robust Control and State Estimation for Partially Observable Linear Systems
+Distributionally Robust Control and State Estimation for Linear Stochastic Systems
 ====================================================
 
 This repository includes the source code for implementing 
-Linear-Quadratic-Gaussian(LQG), Wasserstein Distributionally Robust Controller(WDRC), Distributionally Robust Linear Quadratic Control (DRLQC), WDRC+DRKF, WDRC+DRMMSE,
-and Distributionally Robust Control and Estimation(WDR-CE) [Ours]
+Linear-Quadratic-Gaussian(LQG), Wasserstein Distributionally Robust Controller(WDRC), Distributionally Robust Linear Quadratic Control (DRLQC), WDRC+WKF, WDRC+DRMMSE,
+and Distributionally Robust Control and Estimation(DRCE) [Ours]
 
 ## Requirements
 - Python (>= 3.5)
