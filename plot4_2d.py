@@ -442,18 +442,18 @@ if __name__ == "__main__":
                     
     # We obtained the best-parameters for each method (within the examined region)
     # DRLQC
-    print("Best parameters & Cost within the examined region")
-    print("-------------------------")
-    if args.use_lambda:
-        print("DRCE")
-        print("Best lambda: {}, Best theta_v: {}, Best cost: {}".format(drce_optimal_lambda, drce_optimal_theta_v, drce_optimal_cost))
-    else:
-        print("DRCE")
-        print("Best theta_w: {}, Best theta_v: {}, Best cost: {}".format(drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost))
+    # print("Best parameters & Cost within the examined region")
+    # print("-------------------------")
+    # if args.use_lambda:
+    #     print("DRCE")
+    #     print("Best lambda: {}, Best theta_v: {}, Best cost: {}".format(drce_optimal_lambda, drce_optimal_theta_v, drce_optimal_cost))
+    # else:
+    #     print("DRCE")
+    #     print("Best theta_w: {}, Best theta_v: {}, Best cost: {}".format(drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost))
     
-    print("-------------------------")
-    print("LQG")
-    print("Cost: {}".format(lqg_cost[0]))
+    # print("-------------------------")
+    # print("LQG")
+    # print("Cost: {}".format(lqg_cost[0]))
     
     #exit()
     # REMOVE BELOW
@@ -464,23 +464,21 @@ if __name__ == "__main__":
     # wdrc_optimal_theta_w = 0.005
     
     # Now, pass the raw data for each methods using optimal parameters
-    drlqc_theta_w_str = str(drlqc_optimal_theta_w).replace('.', '_')
-    drlqc_theta_v_str = str(drlqc_optimal_theta_v).replace('.', '_')
-
-    drce_theta_w_str = str(drce_optimal_theta_w).replace('.', '_')
-    drce_theta_v_str = str(drce_optimal_theta_v).replace('.', '_')
-    
-    wdrc_theta_w_str = str(wdrc_optimal_theta_w).replace('.', '_')
-    
-    # Construct the filename for the optimal parameters
-    # drlqc_filename = f"drlqc_{drlqc_theta_w_str}and_{drlqc_theta_v_str}.pkl"
-    # drlqc_filepath = rawpath + drlqc_filename
+    #drce_theta_w_str = str(drce_optimal_theta_w).replace('.', '_')
+    if args.trajectory =='curvy':
+        drce_theta_v = 5.0
+        drce_lambda = 30000
+    elif args.trajectory =='circular':
+        drce_theta_v = 4.5
+        drce_lambda = 20000
+        
+    drce_theta_v_str = str(drce_theta_v).replace('.', '_')
     
     if args.use_lambda:
-        drce_filename = f"drce_{str(drce_optimal_lambda)}and_{drce_theta_v_str}.pkl"
+        drce_filename = f"drce_{str(drce_lambda)}and_{drce_theta_v_str}.pkl"
         drce_filepath = rawpath + drce_filename
-    else:
-        drce_filename = f"drce_{drce_theta_w_str}and_{drce_theta_v_str}.pkl"
+    # else:
+    #     drce_filename = f"drce_{drce_theta_w_str}and_{drce_theta_v_str}.pkl"
     drce_filepath = rawpath + drce_filename
     
     # if args.use_lambda:

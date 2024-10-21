@@ -112,13 +112,9 @@ Then generate plot using
 ```
 python plot4_2d.py --use_lambda --dist normal --noise_dist normal
 ```
+Make sure to choose which parameter to draw a plot.
 ---
-To generate parameter plot with lambda and theta_v, generate data with your own lambda_list and theta_v_list.
-Then, run
-```
-python main_param_2D.py
-```
-Ater data generation,
+For parameter plot,
 ```
 python plot_params_2D.py --use_lambda --dist normal --noise_dist normal
 ```
@@ -130,13 +126,9 @@ Then generate plot using
 ```
 python plot4_2d.py --use_lambda --dist normal --noise_dist normal --trajectory circular
 ```
+Make sure to choose which parameter to draw a plot.
 ---
-To generate parameter plot with lambda and theta_v, generate data with your own lambda_list and theta_v_list.
-Then, run
-```
-python main_param_2D.py --trajectory circular
-```
-Ater data generation,
+For parameter plot,
 ```
 python plot_params_2D.py --use_lambda --dist normal --noise_dist normal --trajectory circular
 ```

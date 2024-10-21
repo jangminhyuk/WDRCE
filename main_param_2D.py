@@ -124,14 +124,17 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
     
     
     if dist=='normal' and trajectory=='curvy':
-        #theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0] # radius of noise ambiguity set
-        theta_v_list = [5.0]
+        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0] # radius of noise ambiguity set
+        #theta_v_list = [5.0]
         theta_w_list = [0.1]
-        lambda_list = [30000]
+        #lambda_list = [30000]
+        lambda_list = [10000, 15000, 20000, 25000, 30000, 35000, 40000]
     elif dist=='normal' and trajectory=='circular':
-        theta_v_list = [4.5] # radius of noise ambiguity set
+        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        #theta_v_list = [4.5] # radius of noise ambiguity set
         theta_w_list = [0.1]
-        lambda_list = [20000]
+        #lambda_list = [20000]
+        lambda_list = [10000, 15000, 20000, 25000, 30000, 35000, 40000]
         #theta_w_list = [0.1, 0.2, 0.5]
         #theta_v_list=[3.0]
     
@@ -500,10 +503,10 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
     print("Params data generation Completed !")
     print("Please make sure your lambda_list(or theta_w_list) and theta_v_list in plot file is as desired")
     if use_lambda:
-        print("Now use : python plot4_2d.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist)
-        print("Now use : python plot_params_2D.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist)
+        print("Now use : python plot4_2d.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist+ " --trajectory "+trajectory)
+        print("Now use : python plot_params_2D.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist+ " --trajectory "+trajectory)
     else:
-        print("Now use : python plot4_2d.py --dist "+ dist + " --noise_dist " + noise_dist)
+        print("Now use : python plot4_2d.py --dist "+ dist + " --noise_dist " + noise_dist+ " --trajectory "+trajectory)
         #print("or")
         #print("python plot4_drlqc_io_pp.py --dist "+ dist + " --noise_dist " + noise_dist)
     
