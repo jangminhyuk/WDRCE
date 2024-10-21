@@ -113,11 +113,11 @@ Then generate plot using
 python plot4_2d.py --use_lambda --dist normal --noise_dist normal
 ```
 Make sure to choose which parameter to draw a plot.
----
 For parameter plot,
 ```
 python plot_params_2D.py --use_lambda --dist normal --noise_dist normal
 ```
+---
 ### 2D trajectory tracking (b) Circular
 ```
 python main_param_2D.py --trajectory circular
@@ -127,7 +127,6 @@ Then generate plot using
 python plot4_2d.py --use_lambda --dist normal --noise_dist normal --trajectory circular
 ```
 Make sure to choose which parameter to draw a plot.
----
 For parameter plot,
 ```
 python plot_params_2D.py --use_lambda --dist normal --noise_dist normal --trajectory circular
