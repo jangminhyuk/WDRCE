@@ -18,7 +18,7 @@ def summarize_theta_w(J_DRCE_mean_all_samp, J_DRCE_std_all_samp, DRCE_prob_all_s
     #plt.xscale('log')
     #plt.yscale('log')
     plt.xlabel(r'$\theta$', fontsize=16)
-    plt.ylabel(r'Out-Of-Sample Performance', fontsize=16)
+    plt.ylabel(r'Out-Of-Sample Cost', fontsize=16)
     plt.legend(fontsize=16)
     plt.grid()
     plt.xlim([theta_list[0], theta_list[-1]])

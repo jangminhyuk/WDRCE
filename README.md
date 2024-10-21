@@ -104,7 +104,43 @@ After data generation, plot the results using
 python plot_params_long.py --dist quadratic --noise_dist quadratic
 ```
 ---
-### Vehicle Control Problem : Total Cost (a) Gaussian
+### 2D trajectory tracking (a) Curvy
+```
+python main_param_2D.py
+```
+Then generate plot using
+```
+python plot4_2d.py --use_lambda --dist normal --noise_dist normal
+```
+---
+To generate parameter plot with lambda and theta_v, generate data with your own lambda_list and theta_v_list.
+Then, run
+```
+python main_param_2D.py
+```
+Ater data generation,
+```
+python plot_params_2D.py --use_lambda --dist normal --noise_dist normal
+```
+### 2D trajectory tracking (b) Circular
+```
+python main_param_2D.py --trajectory circular
+```
+Then generate plot using
+```
+python plot4_2d.py --use_lambda --dist normal --noise_dist normal --trajectory circular
+```
+---
+To generate parameter plot with lambda and theta_v, generate data with your own lambda_list and theta_v_list.
+Then, run
+```
+python main_param_2D.py --trajectory circular
+```
+Ater data generation,
+```
+python plot_params_2D.py --use_lambda --dist normal --noise_dist normal --trajectory circular
+```
+<!-- ### Vehicle Control Problem : Total Cost (a) Gaussian
 First, generate the Total Cost data using
 ```
 python main_param_vehicle_EM.py --dist normal --noise_dist normal
@@ -122,4 +158,4 @@ python main_param_vehicle_EM.py --dist quadratic --noise_dist quadratic
 After data generation, plot the results using
 ```
 python plot_params_vehicle_EM.py --dist quadratic --noise_dist quadratic
-```
+``` -->
