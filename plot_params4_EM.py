@@ -28,8 +28,8 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     ax = fig.add_subplot(111, projection='3d')
      # Collect all cost values to determine z-limits
     all_cost_values = np.concatenate([lqg_cost_values, wdrc_cost_values, drce_cost_values, drlqc_cost_values])
-    z_min = 0.999 * np.min(all_cost_values)
-    z_max = 1.001 * np.max(all_cost_values)
+    z_min = np.min(all_cost_values)
+    z_max =  np.max(all_cost_values)
     # -------------------
     # LQG
     # Interpolate cost values for smooth surface - LQG
@@ -97,35 +97,48 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     surfaces.append(surface_drce)
     labels.append('WDR-CE [Ours]')
     
-    #---------------
-    #---------------
     legend = fig.legend(
-    handles=surfaces,
-    labels=labels,
-    bbox_to_anchor=(0.8, 0.7),
-    loc='center right',
-    frameon=True,
-    framealpha=1.0,
-    facecolor='white'
+        handles=surfaces,
+        labels=labels,
+        bbox_to_anchor=(0.8, 0.72),  # Moves legend further out of the plot
+        loc='center right',
+        frameon=True,
+        framealpha=1.0,
+        facecolor='white',
+        fontsize=18,  # Reduced fontsize to make legend more compact
+        borderpad=0.3,
+        handletextpad=0.2,  # Reduce space between legend handle and text
+        labelspacing=0.1    # Reduce vertical space between entries
     )
-    legend.get_frame().set_alpha(1.0) 
+    legend.get_frame().set_alpha(0.7)
     legend.get_frame().set_facecolor('white')
     
     # Set labels
-    ax.set_xlabel(r'$\theta_w$', fontsize=16)
-    ax.set_ylabel(r'$\theta_v$', fontsize=16)
-    ax.set_zlabel(r'Total Cost', fontsize=16, labelpad=3)
-    # Set z-axis limits
-    ax.set_zlim(z_min, z_max)
+    ax.set_xlabel(r'$\theta_w$', fontsize=24, labelpad=8)
+    ax.set_ylabel(r'$\theta_v$', fontsize=24, labelpad=8)
+    ax.set_zlabel(r'Total Cost', fontsize=24, rotation=90, labelpad=5)
+    ax.set_yticks([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    ax.set_xticks([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    
+    #z_min = np.min([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
+    #z_max = np.max([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
+    
+    # Generate more frequent z-ticks using np.linspace
+    z_ticks = np.arange(np.floor(z_min), np.ceil(z_max)+1, step=1)  # You can adjust the number of ticks with `num`
+    ax.set_zlim([np.floor(z_min), np.ceil(z_max)])
+    # Set the z-ticks on the plot
+    ax.set_zticks(z_ticks)
+
+    ax.tick_params(axis='z', which='major', labelsize=18, pad=2)  # Add padding between z ticks and axis
+    ax.tick_params(axis='x', which='major', labelsize=18, pad=0)  # Add padding between z ticks and axis
+    ax.tick_params(axis='y', which='major', labelsize=18, pad=0)  # Add padding between z ticks and axis
+    
+    
     
     ax.view_init(elev=14, azim=35)
     ax.zaxis.set_rotate_label(False)
-    a = ax.zaxis.label.get_rotation()
-    if a<180:
-        a += 90
-    ax.zaxis.label.set_rotation(a)
-    a = ax.zaxis.label.get_rotation()
-    ax.set_zlabel(r'Total Cost', fontsize=16, labelpad=3)
+    ax.zaxis.label.set_rotation(90)  # Ensure proper rotation for z-label
+
     plt.show()
     fig.savefig(path + 'params_{}_{}_use_io.pdf'.format(dist, noise_dist), dpi=300, bbox_inches="tight", pad_inches=0.3)
     #plt.clf()

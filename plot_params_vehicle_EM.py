@@ -83,7 +83,7 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     legend = fig.legend(
     handles=surfaces,
     labels=labels,
-    bbox_to_anchor=(0.45, 0.7),
+    bbox_to_anchor=(0.46, 0.7),
     loc='center right',
     frameon=True,
     framealpha=1.0,
@@ -97,10 +97,19 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     ax.set_ylabel(r'$\theta_v$', fontsize=16)
     ax.set_yticks([1.0, 2.0, 3.0, 4.0])
     
+    # ax.set_zlabel(r'Total Cost', fontsize=16, rotation=90, labelpad=3)
+    
+    # ax.view_init(elev=10, azim=110)
+    ax.zaxis.set_rotate_label(False)
+    
+    # Invert z-axis and set label position to the left
+    #ax.invert_zaxis()  # This moves the z-axis to the left
+    
     ax.set_zlabel(r'Total Cost', fontsize=16, rotation=90, labelpad=3)
     
-    ax.view_init(elev=10, azim=110)
-    ax.zaxis.set_rotate_label(False)
+    # Adjust the view so the z-axis is on the left
+    ax.view_init(elev=17, azim=60)  # Modify azimuth to rotate the plot
+
     a = ax.zaxis.label.get_rotation()
     if a<180:
         a += 0

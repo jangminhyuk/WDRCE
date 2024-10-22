@@ -13,7 +13,7 @@ import matplotlib.ticker as ticker
 from matplotlib import cm
 from scipy.interpolate import interp1d
 
-def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajectory, plot_results=True):
+def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path, num, trajectory, plot_results=True):
     x_lqr_list,  J_lqr_list, y_lqr_list, u_lqr_list, traj_lqr_list  = [], [], [], [], []
     x_wdrc_list, J_wdrc_list, y_wdrc_list, u_wdrc_list = [], [], [], [] # original wdrc with ordinary Kalman Filter
     x_drce_list, J_drce_list, y_drce_list, u_drce_list, traj_drce_list = [], [], [], [], [] # drce
@@ -38,18 +38,18 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
     J_lqr_ar = np.array(J_lqr_list)
     
     
-    # for out in out_wdrc_list:
-    #     x_wdrc_list.append(out['state_traj'])
-    #     J_wdrc_list.append(out['cost'])
-    #     y_wdrc_list.append(out['output_traj'])
-    #     u_wdrc_list.append(out['control_traj'])
-    #     time_wdrc_list.append(out['comp_time'])
-    # x_wdrc_mean, J_wdrc_mean, y_wdrc_mean, u_wdrc_mean = np.mean(x_wdrc_list, axis=0), np.mean(J_wdrc_list, axis=0), np.mean(y_wdrc_list, axis=0), np.mean(u_wdrc_list, axis=0)
-    # x_wdrc_std, J_wdrc_std, y_wdrc_std, u_wdrc_std = np.std(x_wdrc_list, axis=0), np.std(J_wdrc_list, axis=0), np.std(y_wdrc_list, axis=0), np.std(u_wdrc_list, axis=0)
-    # time_wdrc_ar = np.array(time_wdrc_list)
-    # print("WDRC cost : ", J_wdrc_mean[0])
-    # print("WDRC cost std : ", J_wdrc_std[0])
-    # J_wdrc_ar = np.array(J_wdrc_list)
+    for out in out_wdrc_list:
+        x_wdrc_list.append(out['state_traj'])
+        J_wdrc_list.append(out['cost'])
+        y_wdrc_list.append(out['output_traj'])
+        u_wdrc_list.append(out['control_traj'])
+        time_wdrc_list.append(out['comp_time'])
+    x_wdrc_mean, J_wdrc_mean, y_wdrc_mean, u_wdrc_mean = np.mean(x_wdrc_list, axis=0), np.mean(J_wdrc_list, axis=0), np.mean(y_wdrc_list, axis=0), np.mean(u_wdrc_list, axis=0)
+    x_wdrc_std, J_wdrc_std, y_wdrc_std, u_wdrc_std = np.std(x_wdrc_list, axis=0), np.std(J_wdrc_list, axis=0), np.std(y_wdrc_list, axis=0), np.std(u_wdrc_list, axis=0)
+    time_wdrc_ar = np.array(time_wdrc_list)
+    print("WDRC cost : ", J_wdrc_mean[0])
+    print("WDRC cost std : ", J_wdrc_std[0])
+    J_wdrc_ar = np.array(J_wdrc_list)
 
 
 
@@ -60,7 +60,8 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
         u_drce_list.append(out['control_traj'])
         time_drce_list.append(out['comp_time'])
         traj_drce_list.append(out['desired_traj'])
-            
+          
+        
     x_drce_mean, J_drce_mean, y_drce_mean, u_drce_mean = np.mean(x_drce_list, axis=0), np.mean(J_drce_list, axis=0), np.mean(y_drce_list, axis=0), np.mean(u_drce_list, axis=0)
     x_drce_std, J_drce_std, y_drce_std, u_drce_std = np.std(x_drce_list, axis=0), np.std(J_drce_list, axis=0), np.std(y_drce_list, axis=0), np.std(u_drce_list, axis=0)
     time_drce_ar = np.array(time_drce_list)
@@ -70,27 +71,41 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
     nx = x_drce_mean.shape[1]
     T = u_drce_mean.shape[0]
     
+    costs = [sum( 5*(traj_lqr_list[idx][2, :] - x_drce_list[idx][:-1, 2, 0])**2 + (traj_lqr_list[idx][0, :] - x_drce_list[idx][:-1, 0, 0])**2) for idx in range(len(x_lqr_list))]
+    idx = np.argmin(costs)
+    idx = 0
     # 2D plot
     # Plotting the results with improved visualization
-    plt.figure(figsize=(10, 6))
+    plt.rcParams.update({
+    "text.usetex": True,
+    "text.latex.preamble": r"\usepackage{amsmath}",
+    })
+    fig = plt.figure(figsize=(10, 6))
     print(type(x_lqr_list))
     print(type(traj_lqr_list))
     print("x_lqr_list[0] shape :", x_lqr_list[0].shape )
     print("traj_lqr_list[0] shape :", traj_lqr_list[0].shape )
     # Plot the actual tracked trajectory # First element in the list!
-    plt.plot(x_lqr_list[0][:, 0, 0], x_lqr_list[0][:, 2, 0], label='LQG', color='red', linewidth=2)
-    plt.plot(x_drce_list[0][:, 0, 0], x_drce_list[0][:, 2, 0], label='WDR-CE [Ours]', color='green', linewidth=2)
+    plt.plot(x_lqr_list[idx][:, 2, 0], x_lqr_list[idx][:, 0, 0], label='LQG', color='red', linewidth=2)
+    plt.plot(x_wdrc_list[idx][:, 2, 0], x_wdrc_list[idx][:, 0, 0], label='WDRC [12]', color='blue', linewidth=2)
+    plt.plot(x_drce_list[idx][:, 2, 0], x_drce_list[idx][:, 0, 0], label='WDR-CE [Ours]', color='green', linewidth=2)
+    
+    # plt.plot(x_lqr_mean[:, 2, 0], x_lqr_mean[:, 0, 0], label='LQG', color='red', linewidth=2)
+    # plt.plot(x_wdrc_mean[:, 2, 0], x_wdrc_mean[:, 0, 0], label='WDRC [12]', color='blue', linewidth=2)
+    # plt.plot(x_drce_mean[:, 2, 0], x_drce_mean[:, 0, 0], label='WDR-CE [Ours]', color='green', linewidth=2)
     
     # Plot the desired trajectory based on the selected type
-    plt.plot(traj_lqr_list[0][0, :], traj_lqr_list[0][2, :], label='Desired Trajectory', color='black', linewidth=2)
+    plt.plot(traj_lqr_list[idx][2, :], traj_lqr_list[idx][0, :], label='Desired Trajectory', color='black', linewidth=2)
 
     # Highlight the start and end points
-    plt.scatter(traj_lqr_list[0][0, 0], traj_lqr_list[0][2, 0], color='blue', marker='o', s=100, label='Start Position')
-    plt.scatter(traj_lqr_list[0][0, -1], traj_lqr_list[0][2, -1], color='blue', marker='X', s=100, label='End Position')
+    plt.scatter(traj_lqr_list[0][2, 0], traj_lqr_list[0][0, 0], color='black', marker='X', s=100)#, label='Start/End Position')
+    plt.scatter(traj_lqr_list[0][2, -1], traj_lqr_list[0][0, -1], color='black', marker='X', s=100)
 
     # Label the axes
-    plt.xlabel('X Position [m]', fontsize=12)
-    plt.ylabel('Y Position [m]', fontsize=12)
+    plt.xlabel('X Position [m]', fontsize=28)
+    plt.ylabel('Y Position [m]', fontsize=28)
+    plt.xticks(fontsize=22)                     # Font size for x-axis ticks
+    plt.yticks(fontsize=22)
 
     # Set title
     #plt.title(f'2D Trajectory Tracking', fontsize=14)
@@ -102,7 +117,20 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
     plt.grid(True, linestyle='--', alpha=0.7)
 
     # Customize the legend position and style
-    plt.legend(loc='best', fontsize=10)
+    #plt.legend(loc='best', fontsize=16)
+    legend = fig.legend(
+        bbox_to_anchor=(0.1, 0.18),  # Moves legend further out of the plot
+        loc='lower left',
+        frameon=True,
+        framealpha=1.0,
+        facecolor='white',
+        fontsize=22,  # Reduced fontsize to make legend more compact
+        borderpad=0.3,
+        handletextpad=0.3,  # Reduce space between legend handle and text
+        labelspacing=0.15   # Reduce vertical space between entries
+    )
+    legend.get_frame().set_alpha(0.7)
+    legend.get_frame().set_facecolor('white')
 
     # Save the plot before displaying
     plt.tight_layout()
@@ -149,10 +177,10 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
                 plt.plot(t, x_lqr_mean[:,i,0], 'tab:red', label='LQG')
                 plt.fill_between(t, x_lqr_mean[:,i, 0] + 0.3*x_lqr_std[:,i,0],
                                x_lqr_mean[:,i,0] - 0.3*x_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
-            # if x_wdrc_list != []:
-            #     plt.plot(t, x_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
-            #     plt.fill_between(t, x_wdrc_mean[:,i,0] + 0.3*x_wdrc_std[:,i,0],
-            #                     x_wdrc_mean[:,i,0] - 0.3*x_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
+            if x_wdrc_list != []:
+                plt.plot(t, x_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
+                plt.fill_between(t, x_wdrc_mean[:,i,0] + 0.3*x_wdrc_std[:,i,0],
+                                x_wdrc_mean[:,i,0] - 0.3*x_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
             # if x_drlqc_list != []:
             #     plt.plot(t, x_drlqc_mean[:,i,0], 'tab:purple', label='DRLQC')
             #     plt.fill_between(t, x_drlqc_mean[:,i, 0] + 0.3*x_drlqc_std[:,i,0],
@@ -184,10 +212,10 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
                 plt.plot(t, u_lqr_mean[:,i,0], 'tab:red', label='LQG')
                 plt.fill_between(t, u_lqr_mean[:,i,0] + 0.25*u_lqr_std[:,i,0],
                              u_lqr_mean[:,i,0] - 0.25*u_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
-            # if u_wdrc_list != []:
-            #     plt.plot(t, u_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
-            #     plt.fill_between(t, u_wdrc_mean[:,i,0] + 0.25*u_wdrc_std[:,i,0],
-            #                     u_wdrc_mean[:,i,0] - 0.25*u_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
+            if u_wdrc_list != []:
+                plt.plot(t, u_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
+                plt.fill_between(t, u_wdrc_mean[:,i,0] + 0.25*u_wdrc_std[:,i,0],
+                                u_wdrc_mean[:,i,0] - 0.25*u_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
             # if u_drlqc_list != []:
             #     plt.plot(t, u_drlqc_mean[:,i,0], 'tab:purple', label='DRLQC')
             #     plt.fill_between(t, u_drlqc_mean[:,i,0] + 0.25*u_drlqc_std[:,i,0],
@@ -217,10 +245,10 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
                 plt.plot(t, y_lqr_mean[:,i,0], 'tab:red', label='LQG')
                 plt.fill_between(t, y_lqr_mean[:,i,0] + 0.25*y_lqr_std[:,i,0],
                              y_lqr_mean[:,i, 0] - 0.25*y_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
-            # if y_wdrc_list != []:
-            #     plt.plot(t, y_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
-            #     plt.fill_between(t, y_wdrc_mean[:,i,0] + 0.25*y_wdrc_std[:,i,0],
-            #                     y_wdrc_mean[:,i, 0] - 0.25*y_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
+            if y_wdrc_list != []:
+                plt.plot(t, y_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
+                plt.fill_between(t, y_wdrc_mean[:,i,0] + 0.25*y_wdrc_std[:,i,0],
+                                y_wdrc_mean[:,i, 0] - 0.25*y_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
             # if y_drlqc_list != []:
             #     plt.plot(t, y_drlqc_mean[:,i,0], 'tab:purple', label='DRLQC')
             #     plt.fill_between(t, y_drlqc_mean[:,i,0] + 0.25*y_drlqc_std[:,i,0],
@@ -251,9 +279,9 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
         if J_lqr_list != []:
             plt.plot(t, J_lqr_mean, 'tab:red', label='LQG')
             plt.fill_between(t, J_lqr_mean + 0.25*J_lqr_std, J_lqr_mean - 0.25*J_lqr_std, facecolor='tab:red', alpha=0.3)
-        # if J_wdrc_list != []:
-        #     plt.plot(t, J_wdrc_mean, 'tab:blue', label='WDRC')
-        #     plt.fill_between(t, J_wdrc_mean + 0.25*J_wdrc_std, J_wdrc_mean - 0.25*J_wdrc_std, facecolor='tab:blue', alpha=0.3)
+        if J_wdrc_list != []:
+            plt.plot(t, J_wdrc_mean, 'tab:blue', label='WDRC')
+            plt.fill_between(t, J_wdrc_mean + 0.25*J_wdrc_std, J_wdrc_mean - 0.25*J_wdrc_std, facecolor='tab:blue', alpha=0.3)
         # if J_drlqc_list != []:
         #     plt.plot(t, J_drlqc_mean, 'tab:purple', label='DRLQC')
         #     plt.fill_between(t, J_drlqc_mean + 0.25*J_drlqc_std, J_drlqc_mean - 0.25*J_drlqc_std, facecolor='tab:purple', alpha=0.3)
@@ -276,15 +304,17 @@ def summarize(out_lq_list,  out_drce_list, dist, noise_dist, path, num, trajecto
         ax = fig.gca()
         t = np.arange(T+1)
 
-        max_bin = np.max([J_lqr_ar[:,0], J_drce_ar[:,0]])
-        min_bin = np.min([J_lqr_ar[:,0], J_drce_ar[:,0]])
+        max_bin = np.max([J_lqr_ar[:,0], J_wdrc_ar[:,0], J_drce_ar[:,0]])
+        min_bin = np.min([J_lqr_ar[:,0], J_wdrc_ar[:,0], J_drce_ar[:,0]])
 
         # Plot histograms for LQG and WDR-CE
         ax.hist(J_lqr_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:red', label='LQG', alpha=0.5, linewidth=0.5, edgecolor='tab:red')
+        ax.hist(J_wdrc_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:blue', label='WDRC [12]', alpha=0.5, linewidth=0.5, edgecolor='tab:blue')
         ax.hist(J_drce_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:green', label='WDR-CE', alpha=0.5, linewidth=0.5, edgecolor='tab:green')
 
         # Add vertical lines for means
         ax.axvline(J_lqr_ar[:,0].mean(), color='maroon', linestyle='dashed', linewidth=1.5)
+        ax.axvline(J_wdrc_ar[:,0].mean(), color='blue', linestyle='dashed', linewidth=1.5)
         ax.axvline(J_drce_ar[:,0].mean(), color='green', linestyle='dashed', linewidth=1.5)
 
         # Set x-axis to scientific notation
@@ -466,8 +496,8 @@ if __name__ == "__main__":
     # Now, pass the raw data for each methods using optimal parameters
     #drce_theta_w_str = str(drce_optimal_theta_w).replace('.', '_')
     if args.trajectory =='curvy':
-        drce_theta_v = 5.0
-        drce_lambda = 30000
+        drce_theta_v = 5.0 #5.0
+        drce_lambda = 30000 #30000
     elif args.trajectory =='circular':
         drce_theta_v = 4.5
         drce_lambda = 20000
@@ -481,11 +511,11 @@ if __name__ == "__main__":
     #     drce_filename = f"drce_{drce_theta_w_str}and_{drce_theta_v_str}.pkl"
     drce_filepath = rawpath + drce_filename
     
-    # if args.use_lambda:
-    #     wdrc_filename = f"wdrc_{str(wdrc_optimal_lambda)}.pkl"
+    if args.use_lambda:
+        wdrc_filename = f"wdrc_{str(drce_lambda)}.pkl"
     # else:
     #     wdrc_filename = f"wdrc_{wdrc_theta_w_str}.pkl"
-    # wdrc_filepath = rawpath + wdrc_filename
+    wdrc_filepath = rawpath + wdrc_filename
     
     lqg_filename = f"lqg.pkl"
     lqg_filepath = rawpath + lqg_filename
@@ -495,8 +525,8 @@ if __name__ == "__main__":
     #     drlqc_data = pickle.load(drlqc_file)
     with open(drce_filepath, 'rb') as drce_file:
         drce_data = pickle.load(drce_file)
-    # with open(wdrc_filepath, 'rb') as wdrc_file:
-    #     wdrc_data = pickle.load(wdrc_file)
+    with open(wdrc_filepath, 'rb') as wdrc_file:
+        wdrc_data = pickle.load(wdrc_file)
     with open(lqg_filepath, 'rb') as lqg_file:
         lqg_data = pickle.load(lqg_file)
 
@@ -505,6 +535,6 @@ if __name__ == "__main__":
     #print(drlqc_data['cost'])
 
 
-    summarize(lqg_data, drce_data, args.dist, args.noise_dist,  path , args.num_sim, args.trajectory, plot_results=True)
+    summarize(lqg_data, wdrc_data, drce_data, args.dist, args.noise_dist,  path , args.num_sim, args.trajectory, plot_results=True)
     
 

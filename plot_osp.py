@@ -17,13 +17,13 @@ def summarize_theta_w(J_DRCE_mean_all_samp, J_DRCE_std_all_samp, DRCE_prob_all_s
         
     #plt.xscale('log')
     #plt.yscale('log')
-    plt.xlabel(r'$\theta$', fontsize=16)
-    plt.ylabel(r'Out-Of-Sample Cost', fontsize=16)
-    plt.legend(fontsize=16)
+    plt.xlabel(r'$\theta$', fontsize=20)
+    plt.ylabel(r'Out-Of-Sample Performance', fontsize=20)
+    plt.legend(fontsize=18)
     plt.grid()
     plt.xlim([theta_list[0], theta_list[-1]])
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
     plt.savefig(path +'/OSP.pdf', dpi=300, bbox_inches="tight")
     plt.clf()
 
@@ -33,13 +33,13 @@ def summarize_theta_w(J_DRCE_mean_all_samp, J_DRCE_std_all_samp, DRCE_prob_all_s
     for i, num_noise in enumerate(num_noise_list):
         plt.plot(theta_list, DRCE_prob_all_samp[i], color=colors[i], marker='.', markersize=7, label=rf'$N={num_noise}$')
       
-    plt.xlabel(r'$\theta$', fontsize=16)
-    plt.ylabel(r'Reliability', fontsize=16)
-    plt.legend(fontsize=16)
+    plt.xlabel(r'$\theta$', fontsize=20)
+    plt.ylabel(r'Reliability', fontsize=20)
+    plt.legend(fontsize=18)
     plt.grid()
     plt.xlim([theta_list[0], theta_list[-1]])
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
     plt.savefig(path +'/OSP_Prob_{}_{}.pdf', dpi=300, bbox_inches="tight")
     plt.clf()
 

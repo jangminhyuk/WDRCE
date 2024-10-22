@@ -77,12 +77,28 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     labels.append('WDR-CE [Ours]')
     
     
-    ax.legend(handles=surfaces, labels=labels)
+    # ax.legend(handles=surfaces,
+    #           labels=labels)
+    legend = fig.legend(
+        handles=surfaces,
+        labels=labels,
+        bbox_to_anchor=(0.52, 0.8),  # Moves legend further out of the plot
+        loc='upper left',
+        frameon=True,
+        framealpha=1.0,
+        facecolor='white',
+        fontsize=16,  # Reduced fontsize to make legend more compact
+        borderpad=0.3,
+        handletextpad=0.2,  # Reduce space between legend handle and text
+        labelspacing=0.1    # Reduce vertical space between entries
+    )
+    legend.get_frame().set_alpha(1.0)
+    legend.get_frame().set_facecolor('white')
     
     # Set labels
-    ax.set_xlabel(r'$\lambda$', fontsize=16)
-    ax.set_ylabel(r'$\theta_v$', fontsize=16)
-    ax.set_zlabel(r'Total Cost', fontsize=16, rotation=90, labelpad=3)
+    ax.set_xlabel(r'$\lambda$', fontsize=18, labelpad=10)
+    ax.set_ylabel(r'$\theta_v$', fontsize=18, labelpad=10)
+    ax.set_zlabel(r'Total Cost', fontsize=18, rotation=90, labelpad=20)
     
     ax.view_init(elev=15, azim=40)
     ax.zaxis.set_rotate_label(False)
@@ -91,7 +107,6 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
         a += 0
     ax.zaxis.label.set_rotation(a)
     a = ax.zaxis.label.get_rotation()
-    ax.set_zlabel(r'Total Cost', fontsize=16, labelpad=3)
     plt.show()
     fig.savefig(path + 'params_{}_{}_long.pdf'.format(dist, noise_dist), dpi=300, bbox_inches="tight", pad_inches=0.3)
     #plt.clf()
@@ -160,33 +175,71 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     labels.append('WDR-CE [Ours]')
     
     
-    #---------------
+    # #---------------
+    # legend = fig.legend(
+    # handles=surfaces,
+    # labels=labels,
+    # bbox_to_anchor=(0.46, 0.7),
+    # loc='center right',
+    # frameon=True,
+    # framealpha=1.0,
+    # facecolor='white'
+    # )
+    # legend.get_frame().set_alpha(1.0) 
+    # legend.get_frame().set_facecolor('white')
+    
+    # # Set labels
+    # ax.set_xlabel(r'$\theta_w$', fontsize=16)
+    # ax.set_ylabel(r'$\theta_v$', fontsize=16)
+    # ax.set_zlabel(r'Total Cost', fontsize=16, rotation=90, labelpad=3)
+
     legend = fig.legend(
-    handles=surfaces,
-    labels=labels,
-    bbox_to_anchor=(0.8, 0.7),
-    loc='center right',
-    frameon=True,
-    framealpha=1.0,
-    facecolor='white'
+        handles=surfaces,
+        labels=labels,
+        bbox_to_anchor=(0.573, 0.74),  # Moves legend further out of the plot
+        loc='center right',
+        frameon=True,
+        framealpha=1.0,
+        facecolor='white',
+        fontsize=18,  # Reduced fontsize to make legend more compact
+        borderpad=0.3,
+        handletextpad=0.2,  # Reduce space between legend handle and text
+        labelspacing=0.1    # Reduce vertical space between entries
     )
-    legend.get_frame().set_alpha(1.0) 
+    legend.get_frame().set_alpha(0.7)
     legend.get_frame().set_facecolor('white')
     
     # Set labels
-    ax.set_xlabel(r'$\theta_w$', fontsize=16)
-    ax.set_ylabel(r'$\theta_v$', fontsize=16)
-    ax.set_zlabel(r'Total Cost', fontsize=16, rotation=90, labelpad=3)
+    ax.set_xlabel(r'$\theta_w$', fontsize=24, labelpad=8)
+    ax.set_ylabel(r'$\theta_v$', fontsize=24, labelpad=8)
+    ax.set_zlabel(r'Total Cost', fontsize=24, rotation=90, labelpad=18)
+    ax.set_yticks([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    ax.set_xticks([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
     
-    ax.view_init(elev=15, azim=40)
+    z_min = np.min([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
+    z_max = np.max([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
+    
+    # Generate more frequent z-ticks using np.linspace
+    z_ticks = np.linspace(z_min, z_max, num=5)  # You can adjust the number of ticks with `num`
+    
+    # Set the z-ticks on the plot
+    ax.set_zticks(z_ticks)
+
+    ax.tick_params(axis='z', which='major', labelsize=18, pad=10)  # Add padding between z ticks and axis
+    ax.tick_params(axis='x', which='major', labelsize=18, pad=0)  # Add padding between z ticks and axis
+    ax.tick_params(axis='y', which='major', labelsize=18, pad=0)  # Add padding between z ticks and axis
+    
+    
+    ax.view_init(elev=17, azim=60)
     ax.zaxis.set_rotate_label(False)
     a = ax.zaxis.label.get_rotation()
     if a<180:
         a += 0
     ax.zaxis.label.set_rotation(a)
     a = ax.zaxis.label.get_rotation()
-    ax.set_zlabel(r'Total Cost', fontsize=16, labelpad=3)
+    #ax.set_zlabel(r'Total Cost', fontsize=16, labelpad=3)
     plt.show()
+    plt.tight_layout()
     fig.savefig(path + 'params_{}_{}_long.pdf'.format(dist, noise_dist), dpi=300, bbox_inches="tight", pad_inches=0.3)
     #plt.clf()
 
