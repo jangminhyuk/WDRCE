@@ -23,7 +23,7 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     "text.usetex": True,
     "text.latex.preamble": r"\usepackage{amsmath}",
     })
-    fig = plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=(10, 6))
     ax = fig.add_subplot(111, projection='3d')
     
     # -------------------
@@ -82,7 +82,8 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     legend = fig.legend(
         handles=surfaces,
         labels=labels,
-        bbox_to_anchor=(0.573, 0.81),  # Moves legend further out of the plot
+        bbox_to_anchor=(0.98, 0.5),
+        #bbox_to_anchor=(0.573, 0.84),  # Moves legend further out of the plot
         loc='center right',
         frameon=True,
         framealpha=1.0,

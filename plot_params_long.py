@@ -198,7 +198,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     legend = fig.legend(
         handles=surfaces,
         labels=labels,
-        bbox_to_anchor=(0.573, 0.81),  # Moves legend further out of the plot
+        bbox_to_anchor=(0.573, 0.84),  # Moves legend further out of the plot
         loc='center right',
         frameon=True,
         framealpha=1.0,

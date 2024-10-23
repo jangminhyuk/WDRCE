@@ -94,7 +94,7 @@ def summarize_lambda(wdrc_drkf_lambda_values, wdrc_drkf_theta_v_values, wdrc_drk
     legend = fig.legend(
         handles=surfaces,
         labels=labels,
-        bbox_to_anchor=(0.67, 0.81),  # Moves legend further out of the plot
+        bbox_to_anchor=(0.67, 0.86),  # Moves legend further out of the plot
         loc='center right',
         frameon=True,
         framealpha=1.0,
