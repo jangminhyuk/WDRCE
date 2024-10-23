@@ -7,8 +7,14 @@ import matplotlib.pyplot as plt
 import argparse
 import pickle
 
-def summarize_theta_w(J_DRCE_mean_all_samp, J_DRCE_std_all_samp, DRCE_prob_all_samp, theta_list, num_noise_list):
+def summarize_theta_w(J_DRCE_mean_all_samp, J_DRCE_std_all_samp, DRCE_prob_all_samp, theta_list, num_noise_list, dist, noise_dist):
+    plt.rcParams.update({
+    "text.usetex": True,
+    "text.latex.preamble": r"\usepackage{amsmath}",
+    })
+    
     fig = plt.figure(figsize=(6,4), dpi=300)
+    ax = fig.gca()
     
     colors = ['tab:blue', 'tab:orange', 'tab:green']
     for i, num_noise in enumerate(num_noise_list):
@@ -17,30 +23,87 @@ def summarize_theta_w(J_DRCE_mean_all_samp, J_DRCE_std_all_samp, DRCE_prob_all_s
         
     #plt.xscale('log')
     #plt.yscale('log')
-    plt.xlabel(r'$\theta$', fontsize=20)
-    plt.ylabel(r'Out-Of-Sample Performance', fontsize=20)
-    plt.legend(fontsize=18)
-    plt.grid()
-    plt.xlim([theta_list[0], theta_list[-1]])
-    plt.xticks(fontsize=18)
-    plt.yticks(fontsize=18)
-    plt.savefig(path +'/OSP.pdf', dpi=300, bbox_inches="tight")
+    
+    
+    ax.set_xlabel(r'$\theta$', fontsize=30)
+    ax.set_ylabel(r'Out-of-Sample Cost', fontsize=30)
+    legend = ax.legend(
+        bbox_to_anchor=(1.02, 1.03),  # Moves legend further out of the plot
+        loc='upper right',
+        frameon=True,
+        framealpha=1.0,
+        facecolor='white',
+        fontsize=24,  # Reduced fontsize to make legend more compact
+        borderpad=0.3,
+        handletextpad=0.2,  # Reduce space between legend handle and text
+        labelspacing=0.1    # Reduce vertical space between entries
+    )
+    ax.grid()
+    ax.set_xlim([theta_list[0], theta_list[-1]])
+
+    y_min = np.min([J_DRCE_mean_all_samp[i] - 0.25*J_DRCE_std_all_samp[i] for i in range(len(num_noise_list))]) 
+    y_max = np.max([J_DRCE_mean_all_samp[i] + 0.25*J_DRCE_std_all_samp[i] for i in range(len(num_noise_list))]) 
+    
+    #x_ticks = np.linspace(theta_list[0], theta_list[-1], num=5)  # You can adjust the number of ticks with `num`
+    # Set the z-ticks on the plot
+    
+    #ax.set_xticks(x_ticks)
+
+    y_ticks = np.linspace(int(np.floor(y_min)), int(np.ceil(y_max)), num=5)  # You can adjust the number of ticks with `num`
+    y_ticks = [int(tick) for tick in y_ticks]
+    # Set the z-ticks on the plot
+    ax.set_yticks(y_ticks)
+    ax.set_xticks([2, 4, 6, 8, 10])
+
+    ax.tick_params(axis='x', which='major', labelsize=24, pad=5)  # Add padding between z ticks and axis
+    ax.tick_params(axis='y', which='major', labelsize=24, pad=5)  # Add padding between z ticks and axis
+    
+    
+    plt.savefig(path +f'/OSP_{dist}_{noise_dist}.pdf', dpi=300, bbox_inches="tight")
     plt.clf()
 
     
     fig = plt.figure(figsize=(6,4), dpi=300)
+    ax = fig.gca()
     
     for i, num_noise in enumerate(num_noise_list):
         plt.plot(theta_list, DRCE_prob_all_samp[i], color=colors[i], marker='.', markersize=7, label=rf'$N={num_noise}$')
       
-    plt.xlabel(r'$\theta$', fontsize=20)
-    plt.ylabel(r'Reliability', fontsize=20)
-    plt.legend(fontsize=18)
-    plt.grid()
-    plt.xlim([theta_list[0], theta_list[-1]])
-    plt.xticks(fontsize=18)
-    plt.yticks(fontsize=18)
-    plt.savefig(path +'/OSP_Prob_{}_{}.pdf', dpi=300, bbox_inches="tight")
+
+    
+    ax.set_xlabel(r'$\theta$', fontsize=30)
+    ax.set_ylabel(r'Reliability', fontsize=30)
+    legend = ax.legend(
+        bbox_to_anchor=(1.02, 0.45),  # Moves legend further out of the plot
+        loc='upper right',
+        frameon=True,
+        framealpha=1.0,
+        facecolor='white',
+        fontsize=24,  # Reduced fontsize to make legend more compact
+        borderpad=0.3,
+        handletextpad=0.2,  # Reduce space between legend handle and text
+        labelspacing=0.1    # Reduce vertical space between entries
+    )
+    ax.grid()
+    ax.set_xlim([theta_list[0], theta_list[-1]])
+
+    y_min = np.min([DRCE_prob_all_samp[i] for i in range(len(num_noise_list))]) 
+    y_max = np.max([DRCE_prob_all_samp[i] for i in range(len(num_noise_list))]) 
+    
+    #x_ticks = np.linspace(theta_list[0], theta_list[-1], step=5)  # You can adjust the number of ticks with `num`
+    # Set the z-ticks on the plot
+    
+    ax.set_xticks([2, 4, 6, 8, 10])
+
+    y_ticks = np.linspace(int(np.floor(y_min)), int(np.ceil(y_max)), num=5)  # You can adjust the number of ticks with `num`
+    #y_ticks = [int(tick) for tick in y_ticks]
+    # Set the z-ticks on the plot
+    ax.set_yticks(y_ticks)
+    
+    ax.tick_params(axis='x', which='major', labelsize=24, pad=5)  # Add padding between z ticks and axis
+    ax.tick_params(axis='y', which='major', labelsize=24, pad=5)  # Add padding between z ticks and axis
+
+    plt.savefig(path + f'/OSP_Prob_{dist}_{noise_dist}.pdf', dpi=300, bbox_inches="tight")
     plt.clf()
 
 
@@ -50,7 +113,7 @@ if __name__ == "__main__":
     parser.add_argument('--noise_dist', required=False, default="normal", type=str) #noise distribution (normal or uniform or quadratic)
     args = parser.parse_args()
     
-    theta_list = [0.05, 0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0] # radius of noise ambiguity set
+    theta_list = [0.05, 0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0] # radius of noise ambiguity set
     
     num_noise_list = [10, 15, 20] #
     
@@ -97,5 +160,5 @@ if __name__ == "__main__":
     J_DRCE_std_all_samp = np.array(J_DRCE_std_all_samp)
     DRCE_prob_all_samp = np.array(DRCE_prob_all_samp)
 
-    summarize_theta_w(J_DRCE_mean_all_samp, J_DRCE_std_all_samp, DRCE_prob_all_samp, theta_list, num_noise_list)
+    summarize_theta_w(J_DRCE_mean_all_samp, J_DRCE_std_all_samp, DRCE_prob_all_samp, theta_list, num_noise_list, args.dist, args.noise_dist)
 

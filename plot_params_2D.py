@@ -82,7 +82,7 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     legend = fig.legend(
         handles=surfaces,
         labels=labels,
-        bbox_to_anchor=(0.573, 0.74),  # Moves legend further out of the plot
+        bbox_to_anchor=(0.573, 0.81),  # Moves legend further out of the plot
         loc='center right',
         frameon=True,
         framealpha=1.0,
@@ -99,17 +99,24 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     ax.set_xlabel(r'$\lambda$', fontsize=24, labelpad=8)
     ax.set_ylabel(r'$\theta_v$', fontsize=24, labelpad=8)
     ax.set_zlabel(r'Total Cost', fontsize=24, rotation=90, labelpad=23)
-    ax.set_yticks([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    ax.set_yticks([1.0, 2.0, 3.0, 4.0, 5.0])
+    ax.set_ylim([0.5, 5.5])
     #ax.set_xticks([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
     
     z_min = np.min([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
     z_max = np.max([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
     
+    ax.set_zlim([z_min-8000, z_max+5000])
+
     # Generate more frequent z-ticks using np.linspace
-    z_ticks = np.linspace(z_min, z_max, num=5)  # You can adjust the number of ticks with `num`
+    z_ticks = np.linspace(int(z_min), int(z_max), num=5)  # You can adjust the number of ticks with `num`
     
+    z_ticks = [int(tick) for tick in z_ticks]
+
+
     # Set the z-ticks on the plot
     ax.set_zticks(z_ticks)
+    ax.set_zticklabels([f'${int(tick)}$' for tick in z_ticks], ha='center', va='center')
 
     ax.tick_params(axis='z', which='major', labelsize=18, pad=12)  # Add padding between z ticks and axis
     ax.tick_params(axis='x', which='major', labelsize=18, pad=0)  # Add padding between z ticks and axis

@@ -24,7 +24,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     "text.usetex": True,
     "text.latex.preamble": r"\usepackage{amsmath}",
     })
-    fig = plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=(10, 6))
     ax = fig.add_subplot(111, projection='3d')
      # Collect all cost values to determine z-limits
     all_cost_values = np.concatenate([lqg_cost_values, wdrc_cost_values, drce_cost_values, drlqc_cost_values])
@@ -100,7 +100,7 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     legend = fig.legend(
         handles=surfaces,
         labels=labels,
-        bbox_to_anchor=(0.8, 0.72),  # Moves legend further out of the plot
+        bbox_to_anchor=(0.98, 0.5),  # Moves legend further out of the plot
         loc='center right',
         frameon=True,
         framealpha=1.0,
@@ -124,7 +124,10 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     #z_max = np.max([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
     
     # Generate more frequent z-ticks using np.linspace
-    z_ticks = np.arange(np.floor(z_min), np.ceil(z_max)+1, step=1)  # You can adjust the number of ticks with `num`
+    if dist == "normal":
+        z_ticks = np.arange(np.floor(z_min), np.ceil(z_max)+2, step=2)  # You can adjust the number of ticks with `num`
+    elif dist == "quadratic":
+        z_ticks = np.arange(np.floor(z_min), np.ceil(z_max)+1, step=1)  # You can adjust the number of ticks with `num`
     ax.set_zlim([np.floor(z_min), np.ceil(z_max)])
     # Set the z-ticks on the plot
     ax.set_zticks(z_ticks)

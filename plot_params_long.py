@@ -61,6 +61,7 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     labels.append('WDRC [12]')
     #--------------
     
+
     # Interpolate cost values for smooth surface - DRKF
     lambda_grid_drce, theta_v_grid_drce = np.meshgrid(
         np.linspace(min(drce_lambda_values), max(drce_lambda_values), 100),
@@ -193,10 +194,11 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     # ax.set_ylabel(r'$\theta_v$', fontsize=16)
     # ax.set_zlabel(r'Total Cost', fontsize=16, rotation=90, labelpad=3)
 
+    
     legend = fig.legend(
         handles=surfaces,
         labels=labels,
-        bbox_to_anchor=(0.573, 0.74),  # Moves legend further out of the plot
+        bbox_to_anchor=(0.573, 0.81),  # Moves legend further out of the plot
         loc='center right',
         frameon=True,
         framealpha=1.0,
@@ -220,10 +222,13 @@ def summarize_theta_w(lqg_theta_w_values, lqg_theta_v_values, lqg_cost_values ,w
     z_max = np.max([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
     
     # Generate more frequent z-ticks using np.linspace
-    z_ticks = np.linspace(z_min, z_max, num=5)  # You can adjust the number of ticks with `num`
+    z_ticks = np.linspace(int(np.floor(z_min)), int(np.ceil(z_max)), num=5)  # You can adjust the number of ticks with `num`
     
+    z_ticks = [int(tick) for tick in z_ticks]
+
     # Set the z-ticks on the plot
     ax.set_zticks(z_ticks)
+    ax.set_zticklabels([f'${int(tick)}$' for tick in z_ticks], ha='center', va='center')
 
     ax.tick_params(axis='z', which='major', labelsize=18, pad=10)  # Add padding between z ticks and axis
     ax.tick_params(axis='x', which='major', labelsize=18, pad=0)  # Add padding between z ticks and axis

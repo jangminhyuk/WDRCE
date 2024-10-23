@@ -94,7 +94,7 @@ def summarize_lambda(wdrc_drkf_lambda_values, wdrc_drkf_theta_v_values, wdrc_drk
     legend = fig.legend(
         handles=surfaces,
         labels=labels,
-        bbox_to_anchor=(0.67, 0.74),  # Moves legend further out of the plot
+        bbox_to_anchor=(0.67, 0.81),  # Moves legend further out of the plot
         loc='center right',
         frameon=True,
         framealpha=1.0,
@@ -110,19 +110,25 @@ def summarize_lambda(wdrc_drkf_lambda_values, wdrc_drkf_theta_v_values, wdrc_drk
     # Set labels
     ax.set_xlabel(r'$\lambda$', fontsize=24, labelpad=8)
     ax.set_ylabel(r'$\theta$', fontsize=24, labelpad=8)
-    ax.set_zlabel(r'Total Cost', fontsize=24, rotation=90, labelpad=20)
+    ax.set_zlabel(r'Total Cost', fontsize=24, rotation=90, labelpad=8)
     ax.set_yticks([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10])
+    ax.set_ylim([0.5, 10.5])
     
     z_min = np.min([cost_grid_drce, cost_grid_wdrc, cost_grid_wdrc_drkf, cost_grid_drcmmse])
     z_max = np.max([cost_grid_drce, cost_grid_wdrc, cost_grid_wdrc_drkf, cost_grid_drcmmse])
     
-    # Generate more frequent z-ticks using np.linspace
-    z_ticks = np.linspace(z_min, z_max, num=5)  # You can adjust the number of ticks with `num`
+    if dist=="quadratic":
+        z_ticks = np.arange(int(np.floor(z_min)), int(np.ceil(z_max))+100, step=100)
+    else:
+        z_ticks = np.linspace(int(np.floor(z_min)), int(np.ceil(z_max)), num=5)
     
+    z_ticks = [int(tick) for tick in z_ticks]
+
     # Set the z-ticks on the plot
     ax.set_zticks(z_ticks)
+    ax.set_zticklabels([f'${int(tick)}$' for tick in z_ticks], ha='center', va='center')
 
-    ax.tick_params(axis='z', which='major', labelsize=18, pad=10)  # Add padding between z ticks and axis
+    ax.tick_params(axis='z', which='major', labelsize=18, pad=4)  # Add padding between z ticks and axis
     ax.tick_params(axis='x', which='major', labelsize=18, pad=0)  # Add padding between z ticks and axis
     ax.tick_params(axis='y', which='major', labelsize=18, pad=0)  # Add padding between z ticks and axis
     

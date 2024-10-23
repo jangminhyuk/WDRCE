@@ -86,6 +86,10 @@ def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path
     print("x_lqr_list[0] shape :", x_lqr_list[0].shape )
     print("traj_lqr_list[0] shape :", traj_lqr_list[0].shape )
     # Plot the actual tracked trajectory # First element in the list!
+    
+    y_max = np.max(np.concatenate([x_lqr_list[idx][:, 0, 0],  traj_lqr_list[idx][0,:],  x_wdrc_list[idx][:, 0, 0],  x_drce_list[idx][:, 0, 0]]))
+    y_min = np.min(np.concatenate([x_lqr_list[idx][:, 0, 0],  traj_lqr_list[idx][0,:],  x_wdrc_list[idx][:, 0, 0],  x_drce_list[idx][:, 0, 0]]))
+
     plt.plot(x_lqr_list[idx][:, 2, 0], x_lqr_list[idx][:, 0, 0], label='LQG', color='red', linewidth=2)
     plt.plot(x_wdrc_list[idx][:, 2, 0], x_wdrc_list[idx][:, 0, 0], label='WDRC [12]', color='blue', linewidth=2)
     plt.plot(x_drce_list[idx][:, 2, 0], x_drce_list[idx][:, 0, 0], label='WDR-CE [Ours]', color='green', linewidth=2)
@@ -101,6 +105,7 @@ def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path
     plt.scatter(traj_lqr_list[0][2, 0], traj_lqr_list[0][0, 0], color='black', marker='X', s=100)#, label='Start/End Position')
     plt.scatter(traj_lqr_list[0][2, -1], traj_lqr_list[0][0, -1], color='black', marker='X', s=100)
 
+    plt.ylim([1.1*y_min, 1.1*y_max])
     # Label the axes
     plt.xlabel('X Position [m]', fontsize=28)
     plt.ylabel('Y Position [m]', fontsize=28)
@@ -111,23 +116,25 @@ def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path
     #plt.title(f'2D Trajectory Tracking', fontsize=14)
 
     # Set the aspect ratio to be equal so the plot looks correct
-    plt.gca().set_aspect('equal', adjustable='box')
+    ax = plt.gca()
+    ax.set_aspect('equal', adjustable='box')
 
     # Add a grid for better visibility
     plt.grid(True, linestyle='--', alpha=0.7)
 
     # Customize the legend position and style
     #plt.legend(loc='best', fontsize=16)
-    legend = fig.legend(
-        bbox_to_anchor=(0.1, 0.18),  # Moves legend further out of the plot
-        loc='lower left',
+    legend = ax.legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, 1.27),  # Fine-tune position to be above and centered
         frameon=True,
         framealpha=1.0,
         facecolor='white',
         fontsize=22,  # Reduced fontsize to make legend more compact
         borderpad=0.3,
         handletextpad=0.3,  # Reduce space between legend handle and text
-        labelspacing=0.15   # Reduce vertical space between entries
+        labelspacing=0.15,   # Reduce vertical space between entries
+        ncol=2  # Make the legend horizontal by setting number of columns
     )
     legend.get_frame().set_alpha(0.7)
     legend.get_frame().set_facecolor('white')
