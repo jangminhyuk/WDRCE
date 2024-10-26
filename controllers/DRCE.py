@@ -83,36 +83,11 @@ class DRCE:
         # Find inf_penalty (infimum value of penalty coefficient satisfying Assumption)
         self.infimum_penalty = self.binarysearch_infimum_penalty_finite()
         print("Infimum penalty:", self.infimum_penalty)
-        
-        # REMOVE BELOW
-        #return np.array([790])
-        ##
-        
         print("Optimizing lambda . . . Please wait")
-        #output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='L-BFGS-B', options={'disp': True, 'maxiter': 100,'ftol': 1e-3,'gtol': 1e-3, 'maxfun':100})
-        output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='L-BFGS-B', options={'disp': True, 'maxiter': 100,'ftol': 1e-6,'gtol': 1e-6, 'maxfun':100})
-        # #output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='L-BFGS-B', options={'disp': True, 'maxfun': 500})
-        # #output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='Nelder-Mead', options={'disp': True, 'maxiter': 15, 'fatol': 1e-3})
-        # #output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='Nelder-Mead', options={'disp': True})
+        output = minimize(self.objective, x0=np.array([2*self.infimum_penalty]), method='L-BFGS-B', options={'disp': False, 'maxiter': 100,'ftol': 1e-6,'gtol': 1e-6, 'maxfun':100})
         optimal_penalty = output.x
-        print("DRCE Optimal penalty (lambda_star):", optimal_penalty[0], "theta_w : ", self.theta_w, " theta_v : ", self.theta_v)
         return optimal_penalty
     
-    
-        # #output = minimize(self.objective, x0=np.array([10*self.infimum_penalty]), method='Nelder-Mead', options={'disp': False, 'maxiter': 200})
-        # # penalty_values = np.linspace(120* self.infimum_penalty, 200 * self.infimum_penalty, num=5)
-        
-        
-        penalty_values = np.linspace(2* self.infimum_penalty, 12 * self.infimum_penalty, num=5)
-        objectives = Parallel(n_jobs=-1)(delayed(self.objective)(np.array([p])) for p in penalty_values)
-        objectives = np.array(objectives)
-        optimal_penalty = penalty_values[np.argmin(objectives)]
-        #optimal_penalty = output.x
-        print("DRCE Optimal penalty (lambda_star):", optimal_penalty, "theta_w : ", self.theta_w, " theta_v : ", self.theta_v)
-        #print("DRCE Optimal penalty (lambda_star):", optimal_penalty[0], "theta_w : ", self.theta_w, " theta_v : ", self.theta_v)
-        #print(optimal_penalty)
-        return np.array([optimal_penalty])
-        # #return optimal_penalty
 
     def objective(self, penalty):
         
@@ -152,8 +127,6 @@ class DRCE:
         y = self.get_obs(self.x0_init, self.true_v_init)
         x0_mean = self.DR_kalman_filter(self.v_mean_hat[0], self.M_hat[0], self.x0_mean_hat, y, S_xx[0], S_xy[0], S_yy[0]) #initial state estimation
         obj_val = penalty*self.T*self.theta_w**2 + (self.x0_mean_hat.T @ P[0] @ self.x0_mean_hat)[0][0] + 2*(r[0].T @ self.x0_mean_hat)[0][0] + z[0][0] + np.trace((P[0]+S[0]) @self.x0_cov_hat) + z_tilde.sum()
-        #obj_val = penalty*self.T*self.theta_w**2 + (self.x0_mean_hat.T @ P[0] @ self.x0_mean_hat)[0][0] + 2*(r[0].T @ self.x0_mean_hat)[0][0] + z[0][0] + np.trace(P[0] @ S_xx[0]) + np.trace(S[0] @ x_cov[0]) + z_tilde.sum()
-        #print(f'obj for {penalty}: {obj_val}')
         return obj_val/self.T       
         
     def binarysearch_infimum_penalty_finite(self):

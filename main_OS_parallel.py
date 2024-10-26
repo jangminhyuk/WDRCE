@@ -143,14 +143,13 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
     B = C = Q = R = Qf = np.eye(10) 
     #----------------------------
     # change True to False if you don't want to use given lambda
-    use_lambda = False
-    use_optimal_lambda = True
+    use_lambda = True
+    use_optimal_lambda = False
     lambda_ = 20 # will not be used if the parameter "use_lambda = False"
     noisedist = [noise_dist1]
     
     
-    theta_w_list = [0.05, 0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
-    
+    theta_w_list = [0.05, 0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
     num_noise_list = [10, 15, 20] 
     #theta=theta_w=theta_v=theta_x0 for Out-of-Sample Experiments
     for noise_dist in noisedist:
@@ -197,11 +196,11 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
                     elif dist == "quadratic":
                         #disturbance distribution parameters
                         w_max = 0.2*np.ones(nx)
-                        w_min = -0.5*np.ones(nx)
+                        w_min = -0.2*np.ones(nx)
                         mu_w = (0.5*(w_max + w_min))[..., np.newaxis]
                         Sigma_w = 3.0/20.0*np.diag((w_max - w_min)**2)
                         #initial state distribution parameters
-                        x0_max = 0.5*np.ones(nx)
+                        x0_max = 0.2*np.ones(nx)
                         x0_min = 0.0*np.ones(nx)
                         x0_mean = (0.5*(x0_max + x0_min))[..., np.newaxis]
                         x0_cov = 3.0/20.0 *np.diag((x0_max - x0_min)**2)
@@ -214,7 +213,7 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
                         mu_v = 0.5*np.ones((ny, 1))
                     elif noise_dist =="quadratic":
                         v_min = -1.0*np.ones(ny)
-                        v_max = 2.0*np.ones(ny)
+                        v_max = 1.0*np.ones(ny)
                         mu_v = (0.5*(v_max + v_min))[..., np.newaxis]
                         M = 3.0/20.0 *np.diag((v_max-v_min)**2) #observation noise covariance
                         
@@ -259,8 +258,6 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
                     
                     for result in results:
                         drce.append(result['drce'])
-                        # if not use_lambda:
-                        #     DRCE_lambda.append(result['DRCE_lambda'])
     
                     
                         
@@ -314,7 +311,7 @@ def main(dist, noise_dist1, num_sim, num_samples, num_noise_samples, T):
 
                     
                     # -- Lambda Save -- 
-                    #save_data(path + 'drce_lambda_' + theta_w_ + 'and' + theta_v_+ '.pkl', DRCE_lambda)
+                    save_data(path + 'drce_lambda_' + theta_w_ +'.pkl', DRCE_lambda)
                     #-------------------------------
                     print("num_noise_sample : ", num_noise, " / finished with dist : ", dist, "/ noise_dist : ", noise_dist, "/ seed : ", seed)
                 

@@ -179,8 +179,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
                     [0, dt]])
     C = np.array([[0, 1, 0, 0],
               [0, 0, 0, 1]])
-    # C = np.array([[1, 0, 0, 0],
-    #           [0, 0, 1, 0]])
     Q = np.eye(4) * np.array([20, 1, 20, 1])  # Heavily penalize position errors, less for velocity errors
     Qf = np.eye(4) * np.array([50, 1, 50, 1])
     R = 0.01 * np.eye(2)  # Control cost for both x and y accelerations
@@ -335,18 +333,12 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
             output_drlqc_list = []
             
             #-----Initialize controllers-----
-            #drlqc = DRLQC(theta_w, theta, theta_x0, T, dist, noise_dist, system_data, mu_hat, W_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat, V_hat, x0_mean_hat[0], x0_cov_hat[0], tol)
-            # if use_optimal_lambda == True:
-            #     lambda_ = WDRC_lambda[idx_w][idx_v]
-            # #print(lambda_)
             wdrc = WDRC(lambda_, theta_w, time_steps, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat, M_hat, x0_mean_hat[0], x0_cov_hat[0], use_lambda, use_optimal_lambda)
             # if use_optimal_lambda == True:
             #     lambda_ = DRCE_lambda[idx_w][idx_v]
             drce = DRCE(lambda_, theta_w, theta, theta_x0, time_steps, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat,  M_hat, x0_mean_hat[0], x0_cov_hat[0], use_lambda, use_optimal_lambda)
             lqg = LQG(time_steps, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat, M_hat , x0_mean_hat[0], x0_cov_hat[0])
         
-            # drlqc.solve_sdp()
-            # drlqc.backward()
             wdrc.backward()
             drce.backward()
             lqg.backward()
@@ -376,25 +368,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
             print(" Average cost (DRCE) : ", J_DRCE_mean[0])
             print(" std (DRCE) : ", J_DRCE_std[0])
             np.random.seed(seed) # fix Random seed!
-            #----------------------------
-            # print("Running DRLQC Forward step ...")
-            # for i in range(num_sim):
-                
-            #     #Perform state estimation and apply the controller
-            #     output_drlqc = drlqc.forward()
-            #     output_drlqc_list.append(output_drlqc)
-            #     if i%50==0:
-            #         print("Simulation #",i, ' | cost (DRLQC):', output_drlqc['cost'][0], 'time (DRLQC):', output_drlqc['comp_time'])
-            
-            # J_DRLQC_list = []
-            # for out in output_drlqc_list:
-            #     J_DRLQC_list.append(out['cost'])
-            # J_DRLQC_mean= np.mean(J_DRLQC_list, axis=0)
-            # J_DRLQC_std = np.std(J_DRLQC_list, axis=0)
-            # output_J_DRLQC_mean.append(J_DRLQC_mean[0])
-            # output_J_DRLQC_std.append(J_DRLQC_std[0])
-            # print(" Average cost (DRLQC) : ", J_DRLQC_mean[0])
-            # print(" std (DRLQC) : ", J_DRLQC_std[0])
             
             #----------------------------             
             np.random.seed(seed) # fix Random seed!

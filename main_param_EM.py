@@ -161,25 +161,18 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
     B= np.eye(10)
     C = Q = R = Qf = np.eye(10) 
     #----------------------------
-    # You can change theta_v list and lambda_list ! but you also need to change lists at plot_params4_drlqc_nonzeromean.py to get proper plot
-    
+    # You can change theta_v list and lambda_list ! but you also need to change lists at plot files to get proper plot
     if dist=='normal':
         theta_v_list = [ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
         theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
-        #theta_v_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
-        #theta_w_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
-        #theta_w_list = [6.0]
     else:
         theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
         theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
-        #theta_v_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
-        #theta_w_list = [2.0, 4.0, 6.0] # radius of noise ambiguity set
     lambda_list = [3] # disturbance distribution penalty parameter # not used if use_lambda = False
     theta_w = 1.0 # will not be used if use_lambda = True
-    #num_x0_samples = 15 #  N_x0 
     theta_x0 = 0.5 # radius of initial state ambiguity set
     use_lambda = False # If use_lambda=True, we will use lambda_list. If use_lambda=False, we will use theta_w_list
-    use_optimal_lambda = False
+    use_optimal_lambda = True
     if use_lambda:
         dist_parameter_list = lambda_list
     else:
@@ -202,8 +195,8 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
     print("WDRC_lambda")
     print(WDRC_lambda)
     # Uncomment Below 2 lines to save optimal lambda, using your own distributions.
-    WDRC_lambda = np.zeros((len(theta_w_list),len(theta_v_list)))
-    DRCE_lambda = np.zeros((len(theta_w_list),len(theta_v_list)))
+    #WDRC_lambda = np.zeros((len(theta_w_list),len(theta_v_list)))
+    #DRCE_lambda = np.zeros((len(theta_w_list),len(theta_v_list)))
     #-------Disturbance Distribution-------
     if dist == "normal":
         #disturbance distribution parameters
@@ -238,7 +231,7 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
         v_max = 2.5*np.ones(ny)
         mu_v = (0.5*(v_max + v_min))[..., np.newaxis]
         M = 3.0/20.0 *np.diag((v_max-v_min)**2) #observation noise covariance
-    #x0 = x0_mean
+    
     print(f'real data: \n mu_w: {mu_w}, \n mu_v: {mu_v}, \n Sigma_w: {Sigma_w}, \n Sigma_v: {M}')
     
     N = 1000
@@ -259,7 +252,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
                       em_vars=[
                         'transition_covariance', 'observation_covariance',
                         'transition_offsets', 'observation_offsets',
-                        #'initial_state_mean', 'initial_state_covariance'
                       ])
 
     max_iter = 500
@@ -273,7 +265,7 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
 
     
     for i in range(max_iter):
-        print(f'------- Iteration {i} ------------')
+        print(f'------- EM Iteration {i} / {max_iter} ------------')
         kf = kf.em(X=y_all, n_iter=1)
         loglikelihoods[i] = kf.loglikelihood(y_all)
         
@@ -305,16 +297,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
         errors_Sigma_w.append(error_Sigma_w)
         errors_Sigma_v.append(error_Sigma_v)
         errors_Sigma_x0.append(error_Sigma_x0)
-
-        
-        
-        print("\nEstimation Error (mu_w): {:.6f}".format(error_mu_w))
-        print("\nEstimation Error (Sigma_w): {:.6f}".format(error_Sigma_w))
-        print("\nEstimation Error (mu_v): {:.6f}".format(error_mu_v))
-        print("\nEstimation Error (M): {:.6f}".format(error_Sigma_v))
-        print("\nEstimation Error (x0_mean): {:.6f}".format(error_mu_x0))
-        print("\nEstimation Error (x0_cov): {:.6f}".format(error_Sigma_x0))
-        print("\nLog-Likelihood: {:.6f}".format(loglikelihoods[i]))
         
         params_conv = np.all([error_mu_w <= eps_param, error_mu_v <= eps_param, error_mu_x0 <= eps_param, np.all(error_Sigma_w <= eps_param), np.all(error_Sigma_v <= eps_param), np.all(error_Sigma_x0 <= eps_param)])
         
@@ -322,36 +304,14 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
             if loglikelihoods[i] - loglikelihoods[i-1] <= eps_log and params_conv:
                 print('Converged!')
                 break
-    #exit()
+    
     # Choose the best one
     print("Nominal distributions are ready")
     
     ## Reshape
     mu_w_hat = np.array(mu_w_hat).reshape(-1,1)
     mu_v_hat = np.array(mu_v_hat).reshape(-1,1)
-    print("Estimated mu_w:")
-    print(mu_w_hat)
-    print("\nTrue mu_w:")
-    print(mu_w)
-    print("\nEstimation Error (mu_w): {:.6f}".format(error_mu_w))
-
-    print("\nEstimated Sigma_w:")
-    print(Sigma_w_hat)
-    print("\nTrue Sigma_w:")
-    print(Sigma_w)
-    print("\nEstimation Error (Sigma_w): {:.6f}".format(error_Sigma_w))
-
-    print("\nEstimated mu_v:")
-    print(mu_v_hat)
-    print("\nTrue mu_v:")
-    print(mu_v)
-
     M_hat = Sigma_v_hat
-    print("\nEstimated M:")
-    print(M_hat)
-    print("\nTrue M:")
-    print(M)
-    #exit()
     # ----- Construct Batch matrix for DRLQC-------------------
     W_hat = np.zeros((nx, nx, T+1))
     V_hat = np.zeros((ny, ny, T+1))
@@ -363,7 +323,7 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
     mu_v_hat = np.tile(mu_v_hat, (T+1,1,1) )
     Sigma_w_hat = np.tile(Sigma_w_hat, (T,1,1))
     M_hat = np.tile(M_hat, (T+1,1,1))
-    x0_mean_hat = x0_mean # Assume known initial state for this experiment
+    x0_mean_hat = x0_mean
     x0_cov_hat = x0_cov
     
     # Create paths for saving individual results
@@ -375,14 +335,12 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
         for num_noise in num_noise_list:
             np.random.seed(seed) # fix Random seed!
             print("--------------------------------------------")
-            print("number of noise sample : ", num_noise)
-            print("number of disturbance sample : ", num_samples)
             if use_lambda:
                 lambda_ = dist_parameter
-                print("disturbance : ", dist, "/ noise : ", noise_dist, "/ num_noise : ", num_noise, "/ lambda: ", lambda_, "/ theta_v : ", theta)
+                #print("disturbance : ", dist, "/ noise : ", noise_dist, "/ num_noise : ", num_noise, "/ lambda: ", lambda_, "/ theta_v : ", theta)
             else:
                 theta_w = dist_parameter
-                print("disturbance : ", dist, "/ noise : ", noise_dist, "/ num_noise : ", num_noise, "/ theta_w: ", theta_w, "/ theta_v : ", theta)
+                #print("disturbance : ", dist, "/ noise : ", noise_dist, "/ num_noise : ", num_noise, "/ theta_w: ", theta_w, "/ theta_v : ", theta)
 
             if use_lambda:
                 path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/ioreal/".format(dist, noise_dist)
@@ -420,17 +378,12 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
             lqg.backward()
             
             # Save the optimzed lambda : Uncomment below two lines if you want to save optimal lambda for your own distributions
-            WDRC_lambda[idx_w][idx_v] = wdrc.lambda_
-            DRCE_lambda[idx_w][idx_v] = drce.lambda_
-            # Save individual lambda results for debugging and validation
+            # WDRC_lambda[idx_w][idx_v] = wdrc.lambda_
+            # DRCE_lambda[idx_w][idx_v] = drce.lambda_
             wdrc_lambda_filename = os.path.join(temp_results_path, f'wdrc_lambda_{idx_w}_{idx_v}.pkl')
             drce_lambda_filename = os.path.join(temp_results_path, f'drce_lambda_{idx_w}_{idx_v}.pkl')
-            
-            save_pickle_data(wdrc_lambda_filename, wdrc.lambda_)
-            save_pickle_data(drce_lambda_filename, drce.lambda_)
-            print(f"Saved WDRC_lambda[{idx_w}][{idx_v}] and DRCE_lambda[{idx_w}][{idx_v}]")
-
-            print("WDRC_lambda[{}][{}] :{} ".format(idx_w, idx_v, wdrc.lambda_)  )
+            save_data(wdrc_lambda_filename, wdrc.lambda_)
+            save_data(drce_lambda_filename, drce.lambda_)
             print('---------------------')
             np.random.seed(seed) # fix Random seed!
             #----------------------------
@@ -527,8 +480,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
                 save_data(path + 'wdrc' + theta_w_ + '.pkl', J_WDRC_mean)
                 
             save_data(path + 'lqg.pkl', J_LQG_mean)
-            #save_data(path + 'nonzero_wdrc_lambda.pkl',WDRC_lambda)
-            #save_data(path + 'nonzero_drce_lambda.pkl',DRCE_lambda)
             
             #Save all raw data
             if use_lambda:
@@ -550,10 +501,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T):
                 
             save_data(rawpath + 'lqg.pkl', output_lqg_list)
              
-            
-            #Summarize and plot the results
-            print('\n-------Summary-------')
-            print("dist : ", dist,"/ noise dist : ", noise_dist, "/ num_samples : ", num_samples, "/ num_noise_samples : ", num_noise, "/seed : ", seed)
     
     combinations = [(dist_parameter, theta, idx_w, idx_v) for idx_w, dist_parameter in enumerate(dist_parameter_list) for idx_v, theta in enumerate(theta_v_list)]
     
