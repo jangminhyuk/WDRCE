@@ -17,7 +17,6 @@ def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path
     x_lqr_list,  J_lqr_list, y_lqr_list, u_lqr_list, traj_lqr_list  = [], [], [], [], []
     x_wdrc_list, J_wdrc_list, y_wdrc_list, u_wdrc_list = [], [], [], [] # original wdrc with ordinary Kalman Filter
     x_drce_list, J_drce_list, y_drce_list, u_drce_list, traj_drce_list = [], [], [], [], [] # drce
-    x_drlqc_list, J_drlqc_list, y_drlqc_list, u_drlqc_list = [], [], [], [] # drce
     time_wdrc_list, time_lqr_list, time_drce_list, time_drlqc_list = [], [], [], []
 
 
@@ -81,22 +80,13 @@ def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path
     "text.latex.preamble": r"\usepackage{amsmath}",
     })
     fig = plt.figure(figsize=(10, 6))
-    print(type(x_lqr_list))
-    print(type(traj_lqr_list))
-    print("x_lqr_list[0] shape :", x_lqr_list[0].shape )
-    print("traj_lqr_list[0] shape :", traj_lqr_list[0].shape )
     # Plot the actual tracked trajectory # First element in the list!
-    
     y_max = np.max(np.concatenate([x_lqr_list[idx][:, 0, 0],  traj_lqr_list[idx][0,:],  x_wdrc_list[idx][:, 0, 0],  x_drce_list[idx][:, 0, 0]]))
     y_min = np.min(np.concatenate([x_lqr_list[idx][:, 0, 0],  traj_lqr_list[idx][0,:],  x_wdrc_list[idx][:, 0, 0],  x_drce_list[idx][:, 0, 0]]))
 
     plt.plot(x_lqr_list[idx][:, 2, 0], x_lqr_list[idx][:, 0, 0], label='LQG', color='red', linewidth=2)
     plt.plot(x_wdrc_list[idx][:, 2, 0], x_wdrc_list[idx][:, 0, 0], label='WDRC [12]', color='blue', linewidth=2)
     plt.plot(x_drce_list[idx][:, 2, 0], x_drce_list[idx][:, 0, 0], label='WDR-CE [Ours]', color='green', linewidth=2)
-    
-    # plt.plot(x_lqr_mean[:, 2, 0], x_lqr_mean[:, 0, 0], label='LQG', color='red', linewidth=2)
-    # plt.plot(x_wdrc_mean[:, 2, 0], x_wdrc_mean[:, 0, 0], label='WDRC [12]', color='blue', linewidth=2)
-    # plt.plot(x_drce_mean[:, 2, 0], x_drce_mean[:, 0, 0], label='WDR-CE [Ours]', color='green', linewidth=2)
     
     # Plot the desired trajectory based on the selected type
     plt.plot(traj_lqr_list[idx][2, :], traj_lqr_list[idx][0, :], label='Desired Trajectory', color='black', linewidth=2)
@@ -109,12 +99,9 @@ def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path
     # Label the axes
     plt.xlabel('X Position [m]', fontsize=28)
     plt.ylabel('Y Position [m]', fontsize=28)
-    plt.xticks(fontsize=22)                     # Font size for x-axis ticks
+    plt.xticks(fontsize=22) 
     plt.yticks(fontsize=22)
-
-    # Set title
-    #plt.title(f'2D Trajectory Tracking', fontsize=14)
-
+    
     # Set the aspect ratio to be equal so the plot looks correct
     ax = plt.gca()
     ax.set_aspect('equal', adjustable='box')
@@ -123,7 +110,6 @@ def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path
     plt.grid(True, linestyle='--', alpha=0.7)
 
     # Customize the legend position and style
-    #plt.legend(loc='best', fontsize=16)
     legend = ax.legend(
         loc='upper center',
         bbox_to_anchor=(0.5, 1.27),  # Fine-tune position to be above and centered
@@ -150,207 +136,169 @@ def summarize(out_lq_list,  out_wdrc_list, out_drce_list, dist, noise_dist, path
     plt.clf()
     
     
-    
-    # for out in out_drlqc_list:
-    #         x_drlqc_list.append(out['state_traj'])
-    #         J_drlqc_list.append(out['cost'])
-    #         y_drlqc_list.append(out['output_traj'])
-    #         u_drlqc_list.append(out['control_traj'])
-    #         time_drlqc_list.append(out['comp_time'])
-    # x_drlqc_mean, J_drlqc_mean, y_drlqc_mean, u_drlqc_mean = np.mean(x_drlqc_list, axis=0), np.mean(J_drlqc_list, axis=0), np.mean(y_drlqc_list, axis=0), np.mean(u_drlqc_list, axis=0)
-    # x_drlqc_std, J_drlqc_std, y_drlqc_std, u_drlqc_std = np.std(x_drlqc_list, axis=0), np.std(J_drlqc_list, axis=0), np.std(y_drlqc_list, axis=0), np.std(u_drlqc_list, axis=0)
-    # time_drlqc_ar = np.array(time_drlqc_list)
-    # print("DRLQC cost : ", J_drlqc_mean[0])
-    # print("DRLQC cost std : ", J_drlqc_std[0])
-    # J_drlqc_ar = np.array(J_drlqc_list)   
-    # nx = x_drlqc_mean.shape[1]
-    # T = u_drlqc_mean.shape[0]
-    
-    
-    
     # ------------------------------------------------------------
-    if plot_results:
-        nx = x_drce_mean.shape[1]
-        T = u_drce_mean.shape[0]
-        nu = u_drce_mean.shape[1]
-        ny= y_drce_mean.shape[1]
+    # if plot_results:
+    #     nx = x_drce_mean.shape[1]
+    #     T = u_drce_mean.shape[0]
+    #     nu = u_drce_mean.shape[1]
+    #     ny= y_drce_mean.shape[1]
 
-        fig = plt.figure(figsize=(6,4), dpi=300)
+    #     fig = plt.figure(figsize=(6,4), dpi=300)
 
-        t = np.arange(T+1)
-        for i in range(nx):
+    #     t = np.arange(T+1)
+    #     for i in range(nx):
 
-            if x_lqr_list != []:
-                plt.plot(t, x_lqr_mean[:,i,0], 'tab:red', label='LQG')
-                plt.fill_between(t, x_lqr_mean[:,i, 0] + 0.3*x_lqr_std[:,i,0],
-                               x_lqr_mean[:,i,0] - 0.3*x_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
-            if x_wdrc_list != []:
-                plt.plot(t, x_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
-                plt.fill_between(t, x_wdrc_mean[:,i,0] + 0.3*x_wdrc_std[:,i,0],
-                                x_wdrc_mean[:,i,0] - 0.3*x_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
-            # if x_drlqc_list != []:
-            #     plt.plot(t, x_drlqc_mean[:,i,0], 'tab:purple', label='DRLQC')
-            #     plt.fill_between(t, x_drlqc_mean[:,i, 0] + 0.3*x_drlqc_std[:,i,0],
-            #                    x_drlqc_mean[:,i,0] - 0.3*x_drlqc_std[:,i,0], facecolor='tab:purple', alpha=0.3)
-            if x_drce_list != []:
-                plt.plot(t, x_drce_mean[:,i,0], 'tab:green', label='WDR-CE')
-                plt.fill_between(t, x_drce_mean[:,i, 0] + 0.3*x_drce_std[:,i,0],
-                               x_drce_mean[:,i,0] - 0.3*x_drce_std[:,i,0], facecolor='tab:green', alpha=0.3)
+    #         if x_lqr_list != []:
+    #             plt.plot(t, x_lqr_mean[:,i,0], 'tab:red', label='LQG')
+    #             plt.fill_between(t, x_lqr_mean[:,i, 0] + 0.3*x_lqr_std[:,i,0],
+    #                            x_lqr_mean[:,i,0] - 0.3*x_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
+    #         if x_wdrc_list != []:
+    #             plt.plot(t, x_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
+    #             plt.fill_between(t, x_wdrc_mean[:,i,0] + 0.3*x_wdrc_std[:,i,0],
+    #                             x_wdrc_mean[:,i,0] - 0.3*x_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
+    #         if x_drce_list != []:
+    #             plt.plot(t, x_drce_mean[:,i,0], 'tab:green', label='WDR-CE')
+    #             plt.fill_between(t, x_drce_mean[:,i, 0] + 0.3*x_drce_std[:,i,0],
+    #                            x_drce_mean[:,i,0] - 0.3*x_drce_std[:,i,0], facecolor='tab:green', alpha=0.3)
             
                 
-            plt.xlabel(r'$t$', fontsize=22)
-            plt.ylabel(r'$x_{{{}}}$'.format(i+1), fontsize=22)
-            plt.legend(fontsize=20)
-            plt.grid()
-            plt.xticks(fontsize=20)
-            plt.yticks(fontsize=20)
-            plt.xlim([t[0], t[-1]])
-            ax = fig.gca()
-            ax.locator_params(axis='y', nbins=5)
-            ax.locator_params(axis='x', nbins=5)
-            fig.set_size_inches(6, 4)
-            plt.savefig(path +'states_{}_{}_{}_{}_{}.pdf'.format(i+1, num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
-            plt.clf()
+    #         plt.xlabel(r'$t$', fontsize=22)
+    #         plt.ylabel(r'$x_{{{}}}$'.format(i+1), fontsize=22)
+    #         plt.legend(fontsize=20)
+    #         plt.grid()
+    #         plt.xticks(fontsize=20)
+    #         plt.yticks(fontsize=20)
+    #         plt.xlim([t[0], t[-1]])
+    #         ax = fig.gca()
+    #         ax.locator_params(axis='y', nbins=5)
+    #         ax.locator_params(axis='x', nbins=5)
+    #         fig.set_size_inches(6, 4)
+    #         plt.savefig(path +'states_{}_{}_{}_{}_{}.pdf'.format(i+1, num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
+    #         plt.clf()
 
-        t = np.arange(T)
-        for i in range(nu):
+    #     t = np.arange(T)
+    #     for i in range(nu):
 
-            if u_lqr_list != []:
-                plt.plot(t, u_lqr_mean[:,i,0], 'tab:red', label='LQG')
-                plt.fill_between(t, u_lqr_mean[:,i,0] + 0.25*u_lqr_std[:,i,0],
-                             u_lqr_mean[:,i,0] - 0.25*u_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
-            if u_wdrc_list != []:
-                plt.plot(t, u_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
-                plt.fill_between(t, u_wdrc_mean[:,i,0] + 0.25*u_wdrc_std[:,i,0],
-                                u_wdrc_mean[:,i,0] - 0.25*u_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
-            # if u_drlqc_list != []:
-            #     plt.plot(t, u_drlqc_mean[:,i,0], 'tab:purple', label='DRLQC')
-            #     plt.fill_between(t, u_drlqc_mean[:,i,0] + 0.25*u_drlqc_std[:,i,0],
-            #                  u_drlqc_mean[:,i,0] - 0.25*u_drlqc_std[:,i,0], facecolor='tab:purple', alpha=0.3) 
-            if u_drce_list != []:
-                plt.plot(t, u_drce_mean[:,i,0], 'tab:green', label='WDR-CE')
-                plt.fill_between(t, u_drce_mean[:,i,0] + 0.25*u_drce_std[:,i,0],
-                             u_drce_mean[:,i,0] - 0.25*u_drce_std[:,i,0], facecolor='tab:green', alpha=0.3)       
+    #         if u_lqr_list != []:
+    #             plt.plot(t, u_lqr_mean[:,i,0], 'tab:red', label='LQG')
+    #             plt.fill_between(t, u_lqr_mean[:,i,0] + 0.25*u_lqr_std[:,i,0],
+    #                          u_lqr_mean[:,i,0] - 0.25*u_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
+    #         if u_wdrc_list != []:
+    #             plt.plot(t, u_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
+    #             plt.fill_between(t, u_wdrc_mean[:,i,0] + 0.25*u_wdrc_std[:,i,0],
+    #                             u_wdrc_mean[:,i,0] - 0.25*u_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
+    #         if u_drce_list != []:
+    #             plt.plot(t, u_drce_mean[:,i,0], 'tab:green', label='WDR-CE')
+    #             plt.fill_between(t, u_drce_mean[:,i,0] + 0.25*u_drce_std[:,i,0],
+    #                          u_drce_mean[:,i,0] - 0.25*u_drce_std[:,i,0], facecolor='tab:green', alpha=0.3)       
             
-            plt.xlabel(r'$t$', fontsize=16)
-            plt.ylabel(r'$u_{{{}}}$'.format(i+1), fontsize=16)
-            plt.legend(fontsize=16)
-            plt.grid()
-            plt.xticks(fontsize=20)
-            plt.yticks(fontsize=20)
-            plt.xlim([t[0], t[-1]])
-            ax = fig.gca()
-            ax.locator_params(axis='y', nbins=5)
-            ax.locator_params(axis='x', nbins=5)
-            fig.set_size_inches(6, 4)
-            plt.savefig(path +'controls_{}_{}_{}_{}_{}.pdf'.format(i+1, num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
-            plt.clf()
+    #         plt.xlabel(r'$t$', fontsize=16)
+    #         plt.ylabel(r'$u_{{{}}}$'.format(i+1), fontsize=16)
+    #         plt.legend(fontsize=16)
+    #         plt.grid()
+    #         plt.xticks(fontsize=20)
+    #         plt.yticks(fontsize=20)
+    #         plt.xlim([t[0], t[-1]])
+    #         ax = fig.gca()
+    #         ax.locator_params(axis='y', nbins=5)
+    #         ax.locator_params(axis='x', nbins=5)
+    #         fig.set_size_inches(6, 4)
+    #         plt.savefig(path +'controls_{}_{}_{}_{}_{}.pdf'.format(i+1, num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
+    #         plt.clf()
 
-        t = np.arange(T+1)
-        for i in range(ny):
-            if y_lqr_list != []:
-                plt.plot(t, y_lqr_mean[:,i,0], 'tab:red', label='LQG')
-                plt.fill_between(t, y_lqr_mean[:,i,0] + 0.25*y_lqr_std[:,i,0],
-                             y_lqr_mean[:,i, 0] - 0.25*y_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
-            if y_wdrc_list != []:
-                plt.plot(t, y_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
-                plt.fill_between(t, y_wdrc_mean[:,i,0] + 0.25*y_wdrc_std[:,i,0],
-                                y_wdrc_mean[:,i, 0] - 0.25*y_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
-            # if y_drlqc_list != []:
-            #     plt.plot(t, y_drlqc_mean[:,i,0], 'tab:purple', label='DRLQC')
-            #     plt.fill_between(t, y_drlqc_mean[:,i,0] + 0.25*y_drlqc_std[:,i,0],
-            #                  y_drlqc_mean[:,i, 0] - 0.25*y_drlqc_std[:,i,0], facecolor='tab:purple', alpha=0.3)
-            if y_drce_list != []:
-                plt.plot(t, y_drce_mean[:,i,0], 'tab:green', label='WDR-CE')
-                plt.fill_between(t, y_drce_mean[:,i,0] + 0.25*y_drce_std[:,i,0],
-                             y_drce_mean[:,i, 0] - 0.25*y_drce_std[:,i,0], facecolor='tab:green', alpha=0.3)
+    #     t = np.arange(T+1)
+    #     for i in range(ny):
+    #         if y_lqr_list != []:
+    #             plt.plot(t, y_lqr_mean[:,i,0], 'tab:red', label='LQG')
+    #             plt.fill_between(t, y_lqr_mean[:,i,0] + 0.25*y_lqr_std[:,i,0],
+    #                          y_lqr_mean[:,i, 0] - 0.25*y_lqr_std[:,i,0], facecolor='tab:red', alpha=0.3)
+    #         if y_wdrc_list != []:
+    #             plt.plot(t, y_wdrc_mean[:,i,0], 'tab:blue', label='WDRC')
+    #             plt.fill_between(t, y_wdrc_mean[:,i,0] + 0.25*y_wdrc_std[:,i,0],
+    #                             y_wdrc_mean[:,i, 0] - 0.25*y_wdrc_std[:,i,0], facecolor='tab:blue', alpha=0.3)
+    #         if y_drce_list != []:
+    #             plt.plot(t, y_drce_mean[:,i,0], 'tab:green', label='WDR-CE')
+    #             plt.fill_between(t, y_drce_mean[:,i,0] + 0.25*y_drce_std[:,i,0],
+    #                          y_drce_mean[:,i, 0] - 0.25*y_drce_std[:,i,0], facecolor='tab:green', alpha=0.3)
             
-            plt.xlabel(r'$t$', fontsize=16)
-            plt.ylabel(r'$y_{{{}}}$'.format(i+1), fontsize=16)
-            plt.legend(fontsize=16)
-            plt.grid()
-            plt.xticks(fontsize=20)
-            plt.yticks(fontsize=20)
-            plt.xlim([t[0], t[-1]])
-            ax = fig.gca()
-            ax.locator_params(axis='y', nbins=5)
-            ax.locator_params(axis='x', nbins=5)
-            fig.set_size_inches(6, 4)
-            plt.savefig(path +'outputs_{}_{}_{}_{}_{}.pdf'.format(i+1,num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
-            plt.clf()
+    #         plt.xlabel(r'$t$', fontsize=16)
+    #         plt.ylabel(r'$y_{{{}}}$'.format(i+1), fontsize=16)
+    #         plt.legend(fontsize=16)
+    #         plt.grid()
+    #         plt.xticks(fontsize=20)
+    #         plt.yticks(fontsize=20)
+    #         plt.xlim([t[0], t[-1]])
+    #         ax = fig.gca()
+    #         ax.locator_params(axis='y', nbins=5)
+    #         ax.locator_params(axis='x', nbins=5)
+    #         fig.set_size_inches(6, 4)
+    #         plt.savefig(path +'outputs_{}_{}_{}_{}_{}.pdf'.format(i+1,num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
+    #         plt.clf()
 
 
-        plt.title('Optimal Value')
-        t = np.arange(T+1)
+    #     plt.title('Optimal Value')
+    #     t = np.arange(T+1)
 
-        if J_lqr_list != []:
-            plt.plot(t, J_lqr_mean, 'tab:red', label='LQG')
-            plt.fill_between(t, J_lqr_mean + 0.25*J_lqr_std, J_lqr_mean - 0.25*J_lqr_std, facecolor='tab:red', alpha=0.3)
-        if J_wdrc_list != []:
-            plt.plot(t, J_wdrc_mean, 'tab:blue', label='WDRC')
-            plt.fill_between(t, J_wdrc_mean + 0.25*J_wdrc_std, J_wdrc_mean - 0.25*J_wdrc_std, facecolor='tab:blue', alpha=0.3)
-        # if J_drlqc_list != []:
-        #     plt.plot(t, J_drlqc_mean, 'tab:purple', label='DRLQC')
-        #     plt.fill_between(t, J_drlqc_mean + 0.25*J_drlqc_std, J_drlqc_mean - 0.25*J_drlqc_std, facecolor='tab:purple', alpha=0.3)
-        if J_drce_list != []:
-            plt.plot(t, J_drce_mean, 'tab:green', label='WDR-CE')
-            plt.fill_between(t, J_drce_mean + 0.25*J_drce_std, J_drce_mean - 0.25*J_drce_std, facecolor='tab:green', alpha=0.3)
+    #     if J_lqr_list != []:
+    #         plt.plot(t, J_lqr_mean, 'tab:red', label='LQG')
+    #         plt.fill_between(t, J_lqr_mean + 0.25*J_lqr_std, J_lqr_mean - 0.25*J_lqr_std, facecolor='tab:red', alpha=0.3)
+    #     if J_wdrc_list != []:
+    #         plt.plot(t, J_wdrc_mean, 'tab:blue', label='WDRC')
+    #         plt.fill_between(t, J_wdrc_mean + 0.25*J_wdrc_std, J_wdrc_mean - 0.25*J_wdrc_std, facecolor='tab:blue', alpha=0.3)
+    #     if J_drce_list != []:
+    #         plt.plot(t, J_drce_mean, 'tab:green', label='WDR-CE')
+    #         plt.fill_between(t, J_drce_mean + 0.25*J_drce_std, J_drce_mean - 0.25*J_drce_std, facecolor='tab:green', alpha=0.3)
         
-        plt.xlabel(r'$t$', fontsize=16)
-        plt.ylabel(r'$V_t(x_t)$', fontsize=16)
-        plt.legend(fontsize=16)
-        plt.grid()
-        plt.xlim([t[0], t[-1]])
-        plt.xticks(fontsize=16)
-        plt.yticks(fontsize=16)
-        plt.savefig(path +'J_{}_{}_{}_{}.pdf'.format(num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
-        plt.clf()
+    #     plt.xlabel(r'$t$', fontsize=16)
+    #     plt.ylabel(r'$V_t(x_t)$', fontsize=16)
+    #     plt.legend(fontsize=16)
+    #     plt.grid()
+    #     plt.xlim([t[0], t[-1]])
+    #     plt.xticks(fontsize=16)
+    #     plt.yticks(fontsize=16)
+    #     plt.savefig(path +'J_{}_{}_{}_{}.pdf'.format(num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
+    #     plt.clf()
 
 
-        # Plot the histograms
-        ax = fig.gca()
-        t = np.arange(T+1)
+    #     # Plot the histograms
+    #     ax = fig.gca()
+    #     t = np.arange(T+1)
 
-        max_bin = np.max([J_lqr_ar[:,0], J_wdrc_ar[:,0], J_drce_ar[:,0]])
-        min_bin = np.min([J_lqr_ar[:,0], J_wdrc_ar[:,0], J_drce_ar[:,0]])
+    #     max_bin = np.max([J_lqr_ar[:,0], J_wdrc_ar[:,0], J_drce_ar[:,0]])
+    #     min_bin = np.min([J_lqr_ar[:,0], J_wdrc_ar[:,0], J_drce_ar[:,0]])
 
-        # Plot histograms for LQG and WDR-CE
-        ax.hist(J_lqr_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:red', label='LQG', alpha=0.5, linewidth=0.5, edgecolor='tab:red')
-        ax.hist(J_wdrc_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:blue', label='WDRC [12]', alpha=0.5, linewidth=0.5, edgecolor='tab:blue')
-        ax.hist(J_drce_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:green', label='WDR-CE', alpha=0.5, linewidth=0.5, edgecolor='tab:green')
+    #     # Plot histograms for LQG and WDR-CE
+    #     ax.hist(J_lqr_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:red', label='LQG', alpha=0.5, linewidth=0.5, edgecolor='tab:red')
+    #     ax.hist(J_wdrc_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:blue', label='WDRC [12]', alpha=0.5, linewidth=0.5, edgecolor='tab:blue')
+    #     ax.hist(J_drce_ar[:,0], bins=50, range=(min_bin, max_bin), color='tab:green', label='WDR-CE', alpha=0.5, linewidth=0.5, edgecolor='tab:green')
 
-        # Add vertical lines for means
-        ax.axvline(J_lqr_ar[:,0].mean(), color='maroon', linestyle='dashed', linewidth=1.5)
-        ax.axvline(J_wdrc_ar[:,0].mean(), color='blue', linestyle='dashed', linewidth=1.5)
-        ax.axvline(J_drce_ar[:,0].mean(), color='green', linestyle='dashed', linewidth=1.5)
+    #     # Add vertical lines for means
+    #     ax.axvline(J_lqr_ar[:,0].mean(), color='maroon', linestyle='dashed', linewidth=1.5)
+    #     ax.axvline(J_wdrc_ar[:,0].mean(), color='blue', linestyle='dashed', linewidth=1.5)
+    #     ax.axvline(J_drce_ar[:,0].mean(), color='green', linestyle='dashed', linewidth=1.5)
 
-        # Set x-axis to scientific notation
-        ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{x / 1000:.0f}'))
+    #     # Set x-axis to scientific notation
+    #     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{x / 1000:.0f}'))
 
-        # Increase fontsize for tick labels
-        plt.xticks(fontsize=16)
-        plt.yticks(fontsize=16)
+    #     # Increase fontsize for tick labels
+    #     plt.xticks(fontsize=16)
+    #     plt.yticks(fontsize=16)
 
-        # Legend settings
-        handles, labels = plt.gca().get_legend_handles_labels()
-        order = [0, 1]
-        ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order], fontsize=14)
+    #     # Legend settings
+    #     handles, labels = plt.gca().get_legend_handles_labels()
+    #     order = [0, 1]
+    #     ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order], fontsize=14)
 
-        # Grid and labels
-        ax.grid()
-        ax.set_axisbelow(True)
-        plt.xlabel(r'Total Cost (x1000)', fontsize=16)
-        plt.ylabel(r'Frequency', fontsize=16)
+    #     # Grid and labels
+    #     ax.grid()
+    #     ax.set_axisbelow(True)
+    #     plt.xlabel(r'Total Cost (x1000)', fontsize=16)
+    #     plt.ylabel(r'Frequency', fontsize=16)
 
-        # Save the plot
-        plt.savefig(path + 'J_hist_{}_{}_{}_{}.pdf'.format(num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
-        plt.clf()
-        plt.close('all')
-        
-        
-    # print( 'cost_lqr:{} ({})'.format(J_lqr_mean[0],J_lqr_std[0]),'cost_WDRC: {} ({})'.format(J_wdrc_mean[0], J_wdrc_std[0]) , 'cost_wdrce:{} ({})'.format(J_drce_mean[0],J_drce_std[0]), 'cost_wdrlqc:{} ({})'.format(J_drlqc_mean[0],J_drlqc_std[0]))
-    # print( 'time_lqr: {} ({})'.format(time_lqr_ar.mean(), time_lqr_ar.std()),'time_WDRC: {} ({})'.format(time_wdrc_ar.mean(), time_wdrc_ar.std()), 'time_wdrce: {} ({})'.format(time_drce_ar.mean(), time_drce_ar.std()), 'time_wdrlqc: {} ({})'.format(time_drlqc_ar.mean(), time_drlqc_ar.std()))
-    # #print( 'Settling time_lqr: {}'.format(SettlingTime_lqr),'Settling time_WDRC: {} '.format(SettlingTime), 'Settling time_drce: {}'.format(SettlingTime_drce))
+    #     # Save the plot
+    #     plt.savefig(path + 'J_hist_{}_{}_{}_{}.pdf'.format(num, dist, noise_dist, trajectory), dpi=300, bbox_inches="tight")
+    #     plt.clf()
+    #     plt.close('all')
 
 
 if __name__ == "__main__":
@@ -476,37 +424,12 @@ if __name__ == "__main__":
                             lqg_cost_values.append(lqg_cost[0])
 
                 
-                    
-    # We obtained the best-parameters for each method (within the examined region)
-    # DRLQC
-    # print("Best parameters & Cost within the examined region")
-    # print("-------------------------")
-    # if args.use_lambda:
-    #     print("DRCE")
-    #     print("Best lambda: {}, Best theta_v: {}, Best cost: {}".format(drce_optimal_lambda, drce_optimal_theta_v, drce_optimal_cost))
-    # else:
-    #     print("DRCE")
-    #     print("Best theta_w: {}, Best theta_v: {}, Best cost: {}".format(drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost))
-    
-    # print("-------------------------")
-    # print("LQG")
-    # print("Cost: {}".format(lqg_cost[0]))
-    
-    #exit()
-    # REMOVE BELOW
-    # drlqc_optimal_theta_w = 0.005
-    # drlqc_optimal_theta_v = 1.0
-    # drce_optimal_theta_w = 0.005
-    # drce_optimal_theta_v = 0.5
-    # wdrc_optimal_theta_w = 0.005
-    
-    # Now, pass the raw data for each methods using optimal parameters
-    #drce_theta_w_str = str(drce_optimal_theta_w).replace('.', '_')
+    # choose the parameter to draw!
     if args.trajectory =='curvy':
         drce_theta_v = 5.0 #5.0
         drce_lambda = 30000 #30000
     elif args.trajectory =='circular':
-        drce_theta_v = 4.5
+        drce_theta_v = 4.0
         drce_lambda = 20000
         
     drce_theta_v_str = str(drce_theta_v).replace('.', '_')
@@ -514,22 +437,15 @@ if __name__ == "__main__":
     if args.use_lambda:
         drce_filename = f"drce_{str(drce_lambda)}and_{drce_theta_v_str}.pkl"
         drce_filepath = rawpath + drce_filename
-    # else:
-    #     drce_filename = f"drce_{drce_theta_w_str}and_{drce_theta_v_str}.pkl"
     drce_filepath = rawpath + drce_filename
     
     if args.use_lambda:
         wdrc_filename = f"wdrc_{str(drce_lambda)}.pkl"
-    # else:
-    #     wdrc_filename = f"wdrc_{wdrc_theta_w_str}.pkl"
     wdrc_filepath = rawpath + wdrc_filename
     
     lqg_filename = f"lqg.pkl"
     lqg_filepath = rawpath + lqg_filename
 
-    # Load the data from the file
-    # with open(drlqc_filepath, 'rb') as drlqc_file:
-    #     drlqc_data = pickle.load(drlqc_file)
     with open(drce_filepath, 'rb') as drce_file:
         drce_data = pickle.load(drce_file)
     with open(wdrc_filepath, 'rb') as wdrc_file:
@@ -538,9 +454,6 @@ if __name__ == "__main__":
         lqg_data = pickle.load(lqg_file)
 
     
-    #print("Loaded data for with optimal parameters: DRLQC")
-    #print(drlqc_data['cost'])
-
 
     summarize(lqg_data, wdrc_data, drce_data, args.dist, args.noise_dist,  path , args.num_sim, args.trajectory, plot_results=True)
     

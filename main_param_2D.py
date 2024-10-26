@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# This file generates data for Nonzeromean U-Quadratic distributions
-# 4 method implemented (LQG, WDRC, DRLQC, WDR-CE)
-
-# available for parallel computation
 
 import numpy as np
 import argparse
@@ -115,33 +111,21 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
     lambda_ = 10
     seed = 2024 # Random seed
     np.random.seed(seed)
-    # --- Parameter for DRLQC --- #
-    tol = 1e-2
     # --- ----- --------#
-    #oisedist = [noise_dist1]
     num_noise_list = [num_noise_samples]
-    # You can change theta_v list and lambda_list ! but you also need to change lists at plot_params4_drlqc_nonzeromean.py to get proper plot
-    
     
     if dist=='normal' and trajectory=='curvy':
         theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0] # radius of noise ambiguity set
-        #theta_v_list = [5.0]
         theta_w_list = [0.1]
         lambda_list = [10000, 15000, 20000, 25000, 30000, 35000, 40000]
     elif dist=='normal' and trajectory=='circular':
-        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
-        #theta_v_list = [4.5] # radius of noise ambiguity set
+        theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0]
         theta_w_list = [0.1]
-        #lambda_list = [20000]
         lambda_list = [10000, 15000, 20000, 25000, 30000, 35000, 40000]
-        #theta_w_list = [0.1, 0.2, 0.5]
-        #theta_v_list=[3.0]
-    
-    #lambda_list = [10000, 15000, 20000, 25000, 30000, 35000, 40000] # disturbance distribution penalty parameter # will not be used if use_lambda = False
+        
     num_x0_samples = 15 #  N_x0 
     theta_x0 = 0.5 # radius of initial state ambiguity set
     
-    # If using use_lambda_option, you are not allowed to use multiple lambda_list in this code. (Because we include DRLQC, which also have \theta_w parameter.)
     use_lambda = True # If use_lambda=True, we will use lambda_list. If use_lambda=False, we will use theta_w_list.
     use_optimal_lambda = False
     if use_lambda:
@@ -162,7 +146,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
     nu = 2
     ny = 2
     # Time for simulation
-    #T = 20  # Simulation time
     dt = 0.1  # 
     time_steps = int(T_total / dt) + 1  # Number of simulation steps
     time = np.linspace(0, T_total, time_steps)  # Time vector
@@ -190,11 +173,11 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
     vy_d = np.zeros(time_steps)
     # Desired trajectory function based on the command-line argument
     if trajectory == 'curvy':
-        # Curvy trajectory: sine wave for x and linear ramp for y
-        x_d = Amp * np.sin(omega * time)  # Sine wave for x
-        vx_d = Amp * omega * np.cos(omega * time)  # Velocity for x
-        y_d = slope * time  # Linear ramp for y
-        vy_d = slope * np.ones(time_steps)  # Constant velocity in y
+        # Curvy trajectory: sine wave
+        x_d = Amp * np.sin(omega * time) 
+        vx_d = Amp * omega * np.cos(omega * time) 
+        y_d = slope * time 
+        vy_d = slope * np.ones(time_steps)
     elif trajectory == 'circular':
         # Circular trajectory: circular motion for both x and y
         x_d = radius * np.cos(omega * time)
@@ -203,12 +186,8 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
         vy_d = radius * omega * np.cos(omega * time)
         
     desired_traj = np.vstack((x_d, vx_d, y_d, vy_d))
-    #print("desired  traj shape : ", desired_traj.shape)
-    #exit()
     # Set the initial state to match the first point of the desired trajectory
     initial_trajectory = desired_traj[:,0].reshape(-1,1) # Get the initial desired state at t=0
-    #print("initial traj shape : ", initial_trajectory)
-    initial_position_velocity = initial_trajectory  # This becomes the initial state of the system
     
     #-------Disturbance Distribution-------
     if dist == "normal" and trajectory =='curvy':
@@ -271,29 +250,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
     Sigma_hat = Sigma_hat + 1e-4*np.eye(nx)
     x0_cov_hat = x0_cov_hat + 1e-4*np.eye(nx) 
     
-    
-    
-    # ----- Construct Batch matrix for DRLQC-------------------
-    # W_hat = np.zeros((nx, nx, T+1))
-    # V_hat = np.zeros((ny, ny, T+1))
-    # for i in range(T):
-    #     W_hat[:,:,i] = Sigma_hat[i]
-    #     V_hat[:,:,i] = M_hat[i]
-    # # ----------------------------
-    # #----------------------------
-    
-    # Lambda list (from the given theta_w, WDRC and WDR-CE calcluates optimized lambda)
-    WDRC_lambda_file = open('./inputs/nonzero_qq/nonzero_wdrc_lambda.pkl', 'rb')
-    WDRC_lambda = pickle.load(WDRC_lambda_file)
-    WDRC_lambda_file.close()
-    DRCE_lambda_file = open('./inputs/nonzero_qq/nonzero_drce_lambda.pkl', 'rb')
-    DRCE_lambda = pickle.load(DRCE_lambda_file)
-    DRCE_lambda_file.close()
-    
-    # Uncomment Below 2 lines to save optimal lambda, using your own distributions.
-    WDRC_lambda = np.zeros((len(theta_w_list),len(theta_v_list)))
-    DRCE_lambda = np.zeros((len(theta_w_list),len(theta_v_list)))
-    
     # Create paths for saving individual results
     temp_results_path = "./temp_results/"
     if not os.path.exists(temp_results_path):
@@ -321,8 +277,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
                 os.makedirs(path)
         
             
-            
-            
             #-------Create a random system-------
             system_data = (A, B, C, Q, Qf, R, M)
             
@@ -334,8 +288,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
             
             #-----Initialize controllers-----
             wdrc = WDRC(lambda_, theta_w, time_steps, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat, M_hat, x0_mean_hat[0], x0_cov_hat[0], use_lambda, use_optimal_lambda)
-            # if use_optimal_lambda == True:
-            #     lambda_ = DRCE_lambda[idx_w][idx_v]
             drce = DRCE(lambda_, theta_w, theta, theta_x0, time_steps, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat,  M_hat, x0_mean_hat[0], x0_cov_hat[0], use_lambda, use_optimal_lambda)
             lqg = LQG(time_steps, dist, noise_dist, system_data, mu_hat, Sigma_hat, x0_mean, x0_cov, x0_max, x0_min, mu_w, Sigma_w, w_max, w_min, v_max, v_min, mu_v, v_mean_hat, M_hat , x0_mean_hat[0], x0_cov_hat[0])
         
@@ -343,9 +295,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
             drce.backward()
             lqg.backward()
             
-            # Save the optimzed lambda : Uncomment below two lines if you want to save optimal lambda for your own distributions
-            #WDRC_lambda[idx_w][idx_v] = wdrc.lambda_
-            #DRCE_lambda[idx_w][idx_v] = drce.lambda_
             print('---------------------')
             np.random.seed(seed) # fix Random seed!
             #----------------------------
@@ -422,9 +371,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
                 save_data(path + 'wdrc' + theta_w_ + '.pkl', J_WDRC_mean)
                 
             save_data(path + 'lqg.pkl', J_LQG_mean)
-    
-            #save_data(path + 'nonzero_wdrc_lambda.pkl',WDRC_lambda)
-            #save_data(path + 'nonzero_drce_lambda.pkl',DRCE_lambda)
             #Summarize and plot the results
             #Save all raw data
             if use_lambda:
@@ -435,7 +381,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
             if not os.path.exists(rawpath):
                 os.makedirs(rawpath)
                 
-            #save_data(rawpath + 'drlqc' + theta_w_ + 'and' + theta_v_+ '.pkl', output_drce_list)
             if use_lambda:
                 save_data(rawpath + 'drce_' + str(lambda_) + 'and' + theta_v_+ '.pkl', output_drce_list)
                 save_data(rawpath + 'wdrc_' + str(lambda_) + '.pkl', output_wdrc_list)
@@ -453,24 +398,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
                 delayed(perform_simulation)(lambda_, noise_dist, dist_parameter, theta, idx_w, idx_v)
                 for dist_parameter, theta, idx_w, idx_v in combinations
             )     
-    
-    for idx_w in range(len(theta_w_list)):
-        for idx_v in range(len(theta_v_list)):
-            wdrc_lambda_filename = os.path.join(temp_results_path, f'wdrc_lambda_{idx_w}_{idx_v}.pkl')
-            drce_lambda_filename = os.path.join(temp_results_path, f'drce_lambda_{idx_w}_{idx_v}.pkl')
-
-            # Load individual results and update the final arrays
-            if os.path.exists(wdrc_lambda_filename):
-                WDRC_lambda[idx_w][idx_v] = load_pickle_data(wdrc_lambda_filename)
-            if os.path.exists(drce_lambda_filename):
-                DRCE_lambda[idx_w][idx_v] = load_pickle_data(drce_lambda_filename)
-                
-    # if use_lambda:
-    #     path = "./results/{}_{}/finite/multiple/DRLQC/params_lambda/io/".format(dist, noise_dist)
-    # else:
-    #     path = "./results/{}_{}/finite/multiple/DRLQC/params_thetas/io/".format(dist, noise_dist)
-    #     save_data(path + 'nonzero_wdrc_lambda.pkl',WDRC_lambda)
-    #     save_data(path + 'nonzero_drce_lambda.pkl',DRCE_lambda)
             
     print("Params data generation Completed !")
     print("Please make sure your lambda_list(or theta_w_list) and theta_v_list in plot file is as desired")
@@ -479,8 +406,6 @@ def main(dist, noise_dist, num_sim, num_samples, num_noise_samples, T_total, tra
         print("Now use : python plot_params_2D.py --use_lambda --dist "+ dist + " --noise_dist " + noise_dist+ " --trajectory "+trajectory)
     else:
         print("Now use : python plot4_2d.py --dist "+ dist + " --noise_dist " + noise_dist+ " --trajectory "+trajectory)
-        #print("or")
-        #print("python plot4_drlqc_io_pp.py --dist "+ dist + " --noise_dist " + noise_dist)
     
             
 

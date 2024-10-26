@@ -73,7 +73,7 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
         (lambda_grid_drce, theta_v_grid_drce), method='cubic'
     )
     
-    # Plot smooth surface - DCE
+    # Plot smooth surface - DRCE
     surface_drce = ax.plot_surface(lambda_grid_drce, theta_v_grid_drce, cost_grid_drce, alpha=0.5, color='green', label='WDR-CE', antialiased=False)
     surfaces.append(surface_drce)
     labels.append('WDR-CE [Ours]')
@@ -83,7 +83,6 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
         handles=surfaces,
         labels=labels,
         bbox_to_anchor=(0.98, 0.5),
-        #bbox_to_anchor=(0.573, 0.84),  # Moves legend further out of the plot
         loc='center right',
         frameon=True,
         framealpha=1.0,
@@ -102,7 +101,6 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     ax.set_zlabel(r'Total Cost', fontsize=24, rotation=90, labelpad=23)
     ax.set_yticks([1.0, 2.0, 3.0, 4.0, 5.0])
     ax.set_ylim([0.5, 5.5])
-    #ax.set_xticks([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
     
     z_min = np.min([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
     z_max = np.max([cost_grid_drce, cost_grid_wdrc, cost_grid_lqg])
@@ -130,7 +128,6 @@ def summarize_lambda(lqg_lambda_values, lqg_theta_v_values, lqg_cost_values ,wdr
     ax.zaxis.label.set_rotation(90)  # Ensure proper rotation for z-label
     plt.show()
     fig.savefig(path + 'params_{}_{}_{}.pdf'.format(dist, noise_dist, trajectory), dpi=300, bbox_inches="tight", pad_inches=0.3)
-    #plt.clf()
 
 
 if __name__ == "__main__":
@@ -166,19 +163,14 @@ if __name__ == "__main__":
     drce_optimal_theta_w, drce_optimal_theta_v, drce_optimal_cost = 0, 0, np.inf
     wdrc_optimal_theta_w, wdrc_optimal_cost = 0, np.inf
     drce_optimal_lambda, wdrc_optimal_lambda = 0, 0
-    # TODO : Modify the theta_v_list and lambda_list below to match your experiments!!! 
     
-    theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
     theta_w_list = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] # radius of noise ambiguity set
     theta_v_list = [1.0, 2.0, 3.0, 4.0, 5.0]
     if args.dist=='normal':
-        lambda_list = [15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
         lambda_list = [10000, 15000, 20000, 25000, 30000, 35000, 40000] # disturbance distribution penalty parameter
     else:
         lambda_list = [15, 20, 25, 30, 35, 40, 45, 50] # disturbance distribution penalty parameter
         lambda_list = [20, 30, 40, 50] # disturbance distribution penalty parameter
-    # Regular expression pattern to extract numbers from file names
-    
     
     # Regular expression pattern to extract numbers from file names
     if args.use_lambda:

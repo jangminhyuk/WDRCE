@@ -131,7 +131,7 @@ For parameter plot,
 ```
 python plot_params_2D.py --use_lambda --dist normal --noise_dist normal --trajectory circular
 ```
-<!-- ### Vehicle Control Problem : Total Cost (a) Gaussian
+### Vehicle Control Problem (nx=21, nu=11, ny=10) : Total Cost - Gaussian
 First, generate the Total Cost data using
 ```
 python main_param_vehicle_EM.py --dist normal --noise_dist normal
@@ -141,7 +141,7 @@ After data generation, plot the results using
 python plot_params_vehicle_EM.py --dist normal --noise_dist normal
 ```
 ---
-### Vehicle Control Problem : Total Cost (b) U-Quadratic
+### Vehicle Control Problem (nx=21, nu=11, ny=10) : Total Cost - U-Quadratic
 First, generate the Total Cost data using
 ```
 python main_param_vehicle_EM.py --dist quadratic --noise_dist quadratic
@@ -149,4 +149,4 @@ python main_param_vehicle_EM.py --dist quadratic --noise_dist quadratic
 After data generation, plot the results using
 ```
 python plot_params_vehicle_EM.py --dist quadratic --noise_dist quadratic
-``` -->
+```
